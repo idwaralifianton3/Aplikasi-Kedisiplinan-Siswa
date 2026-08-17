@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buku Catatan Kedisiplinan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #FBF6EA;
+    --paper: #FFFEF9;
+    --ink: #23241C;
+    --navy: #13233D;
+    --navy-soft: #26385A;
+    --olive: #1F2B13;
+    --gold: #C48F01;
+    --gold-dark: #93700A;
+    --amber: #FFC104;
+    --coral: #E38060;
+    --success: #5C7A5E;
+    --success-bg: #EAF1E9;
+    --line: #E5DAC0;
+    --radius: 18px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, rgba(19,35,61,0.05) 1px, transparent 0);
+    background-size: 22px 22px;
+    color: var(--ink);
+    font-family:'Plus Jakarta Sans',sans-serif;
+    min-height:100vh;
+    padding-bottom: 40px;
+  }
+  header{
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy-soft) 100%);
+    color: var(--paper);
+    padding: 24px 18px 84px;
+    position: relative;
+    overflow: hidden;
+  }
+  header .sun{
+    position:absolute; top:-46px; right:-10px;
+    width:170px; height:170px; border-radius:50%;
+    background: radial-gradient(circle, var(--amber) 0%, rgba(255,193,4,.4) 42%, rgba(255,193,4,0) 72%);
+    z-index:0;
+  }
+  header .ridge{
+    position:absolute; left:0; right:0; bottom:-1px; width:100%; height:96px;
+    z-index:1; line-height:0;
+  }
+  header .ridge svg{display:block; width:100%; height:100%;}
+  .header-inner{max-width: 720px; margin: 0 auto; position:relative; z-index:2;}
+  .badge{
+    display:inline-flex; align-items:center; gap:8px;
+    background: linear-gradient(135deg, var(--gold), var(--amber));
+    color: var(--navy);
+    font-family:'Plus Jakarta Sans',sans-serif;
+    font-weight:700;
+    font-size: 12px;
+    letter-spacing:.04em;
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(196,143,1,.35);
+  }
+  h1{font-family:'Fraunces',serif; font-weight:600; font-size: 27px; margin: 0 0 5px; letter-spacing:-.01em;}
+  header p{margin:0; opacity:.8; font-size:13.5px; max-width:32ch;}
+  main{max-width: 720px; margin: -46px auto 0; padding: 0 16px; position: relative; z-index: 3;}
+  nav.tabs{
+    display:flex; gap:4px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 5px;
+    margin-bottom: 16px;
+    overflow-x:auto;
+    box-shadow: 0 4px 16px rgba(19,35,61,.08);
+  }
+  nav.tabs button{
+    flex: 1 0 auto; white-space:nowrap;
+    border:none; background:transparent;
+    color: var(--navy);
+    font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; font-size: 13px;
+    padding: 10px 12px; border-radius: 999px; cursor:pointer;
+    transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  nav.tabs button.active{
+    background: linear-gradient(135deg, var(--gold), var(--amber));
+    color: var(--navy);
+    box-shadow: 0 3px 10px rgba(196,143,1,.4);
+  }
+  .card{
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 14px rgba(19,35,61,.06);
+  }
+  .card h2{
+    font-family:'Fraunces',serif; font-weight:600; font-size: 19px; margin: 0; color: var(--navy);
+  }
+  .card h2::after{
+    content:''; display:block; width:36px; height:3px; margin-top:8px; border-radius:3px;
+    background: linear-gradient(90deg, var(--gold), var(--amber));
+  }
+  .card .hint{font-size: 12.5px; color: #8A8267; margin: 10px 0 16px;}
+  label{
+    display:block; font-size: 12px; font-weight:700; color: var(--navy);
+    margin: 14px 0 6px; text-transform: uppercase; letter-spacing:.05em;
+  }
+  label:first-of-type{margin-top:0;}
+  select, input[type=text], input[type=date], textarea{
+    width:100%; border: 1.5px solid var(--line); background: var(--bg);
+    border-radius: 11px; padding: 11px 12px;
+    font-family:'Plus Jakarta Sans',sans-serif; font-size: 15px; color: var(--ink);
+  }
+  select:focus, input:focus, textarea:focus{
+    outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(196,143,1,.16);
+  }
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .quickbar{display:flex; gap:8px; margin: 10px 0 4px; flex-wrap:wrap; align-items:center;}
+  .quickbar button{
+    border:1.5px solid var(--line); background: var(--bg); color:var(--navy);
+    font-size:12.5px; font-weight:700; padding:7px 12px; border-radius:999px; cursor:pointer;
+    transition: border-color .15s ease;
+  }
+  .quickbar button:hover{border-color:var(--gold);}
+  .count-pill{
+    display:inline-block; background: rgba(19,35,61,.07); color:var(--navy);
+    font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:12px;
+    padding:4px 10px; border-radius:999px; margin-left:auto;
+  }
+  .student-checklist{
+    max-height: 340px; overflow-y:auto; margin-top:10px;
+    border: 1.5px solid var(--line); border-radius:14px; background: var(--paper);
+  }
+  .sc-row{
+    display:flex; align-items:center; gap:10px;
+    padding: 11px 13px; border-bottom:1px solid #F1EAD5; font-size:14.5px; cursor:pointer;
+    transition: background .1s ease;
+  }
+  .sc-row:last-child{border-bottom:none;}
+  .sc-row:hover{background:#FBF1D9;}
+  .sc-row.already{background:#FCF3D9;}
+  .sc-row input{width:18px; height:18px; accent-color: var(--gold-dark);}
+  .sc-row .tag-existing{margin-left:auto; font-size:10.5px; color:var(--gold-dark); font-weight:700; text-transform:uppercase; letter-spacing:.03em;}
+  .add-new-row{
+    display:flex; gap:8px; padding:10px 12px; border-top:1.5px dashed var(--line); background:#FBF8EF;
+  }
+  .add-new-row input{flex:1;}
+  .add-new-row button{
+    border:none; background:var(--navy); color:#fff; font-weight:600; font-size:13px;
+    padding:0 14px; border-radius:8px; cursor:pointer;
+  }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    background: var(--navy); color: var(--paper); border:none;
+    font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size: 14.5px;
+    padding: 13px 18px; border-radius: 13px; cursor:pointer; width:100%; margin-top: 18px;
+    transition: background .15s ease, transform .1s ease, opacity .15s ease;
+    box-shadow: 0 6px 18px rgba(19,35,61,.2);
+  }
+  .btn:active{transform: scale(.98);}
+  .btn:hover{background: var(--navy-soft);}
+  .btn:disabled{opacity:.6; cursor:default; transform:none;}
+  .btn.secondary{background: transparent; color: var(--navy); border: 1.5px solid var(--navy); box-shadow:none;}
+  .btn.secondary:hover{background: rgba(19,35,61,.05);}
+  .btn.marigold{background: linear-gradient(135deg, var(--gold), var(--amber)); color:var(--navy); box-shadow: 0 6px 18px rgba(196,143,1,.32);}
+  .btn.marigold:hover{filter:brightness(.96);}
+  .stamp{
+    display:none; align-items:center; gap:10px;
+    background: var(--success-bg); border: 1.5px dashed var(--success); color: var(--success);
+    font-weight:700; font-size: 13.5px; padding: 11px 14px; border-radius: 12px; margin-top: 14px;
+  }
+  .stamp.show{display:flex;}
+  .filters{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
+  .filters select, .filters input{width:auto; flex:1; min-width:120px;}
+  table{width:100%; border-collapse:collapse; font-size: 13.5px;}
+  th{
+    text-align:left; font-family:'IBM Plex Mono',monospace; font-size: 11px;
+    text-transform:uppercase; letter-spacing:.04em; color:#8A8267;
+    padding: 8px 6px; border-bottom: 1.5px solid var(--line);
+  }
+  td{padding: 9px 6px; border-bottom: 1px solid #F1EAD5; vertical-align:top;}
+  td.del{cursor:pointer; color:var(--coral); text-align:center; font-weight:700;}
+  .empty{text-align:center; padding: 30px 10px; color: #A79E80; font-size: 13.5px;}
+  .wa-output{
+    background: var(--paper); border: 1.5px dashed var(--line); border-radius: 14px; padding: 16px;
+    font-size: 14px; line-height:1.6; white-space: pre-wrap; font-family:'Plus Jakarta Sans',sans-serif;
+    max-height: 420px; overflow-y:auto;
+  }
+  .copy-note{font-size: 12.5px; color: var(--success); font-weight:700; margin-top:8px; display:none;}
+  .copy-note.show{display:block;}
+  .kelas-tag{
+    display:inline-block; background: rgba(196,143,1,.14); color: var(--gold-dark);
+    font-family:'IBM Plex Mono',monospace; font-size: 11px; font-weight:700;
+    padding: 2px 8px; border-radius: 7px;
+  }
+  .student-list{max-height: 220px; overflow-y:auto; margin-top: 12px; border-top: 1px solid #F1EAD5;}
+  .student-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 9px 2px; border-bottom: 1px solid #F1EAD5; font-size:13.5px;
+  }
+  .student-row span.x{color:var(--coral); cursor:pointer; font-weight:700; padding:0 6px;}
+  footer{max-width:720px; margin: 8px auto 0; padding: 0 16px; text-align:center; font-size:12px; color:#A79E80;}
+  #print-title{display:none;}
+  #print-title-guru{display:none;}
+  .pct-badge{
+    display:inline-block; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:12px;
+    padding:2px 9px; border-radius:999px; background: var(--success-bg); color: var(--success);
+  }
+  .pct-badge.low{background:#FBEAE3; color:var(--coral);}
+  .day-block{border-bottom:1.5px dashed var(--line); padding: 12px 0;}
+  .day-block:last-child{border-bottom:none;}
+  .day-block .day-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .day-block .day-head strong{font-size:13.5px;}
+  .task-line{display:flex; align-items:center; gap:8px; font-size:13px; padding:4px 0;}
+  .task-line .mark{width:16px; text-align:center; font-weight:700;}
+  .task-line.done .mark{color: var(--success);}
+  .task-line.miss .mark{color: var(--coral);}
+  .summary-row{
+    display:flex; justify-content:space-between; align-items:center;
+    background:#FBF1D9; border-radius:12px; padding:12px 14px; margin-top:12px; font-size:13.5px; font-weight:700;
+  }
+  @media print{
+    header, nav.tabs, footer, .hint, .filters, #btn-copy-csv, #btn-cetak, #btn-cetak-guru, .copy-note{display:none !important;}
+    main{margin:0; max-width:100%; padding:0;}
+    .card{border:none; box-shadow:none; padding:0;}
+    #print-title, #print-title-guru{display:block; font-family:'Fraunces',serif; font-size:18px; margin-bottom:10px;}
+    table{font-size:12px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="sun"></div>
+  <div class="header-inner">
+    <div class="badge">📋 Buku Wali Kelas</div>
+    <h1>Catatan Kedisiplinan Siswa</h1>
+    <p>Pilih pelanggaran &middot; centang siswa sekaligus &middot; aman diisi banyak guru bersamaan</p>
+  </div>
+  <div class="ridge">
+    <svg viewBox="0 0 1440 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,110 L130,45 L260,95 L410,25 L580,85 L740,35 L900,90 L1080,40 L1260,80 L1440,50 L1440,200 L0,200 Z" style="fill:#26385A" opacity="0.55"/>
+      <path d="M0,140 L160,75 L330,125 L510,60 L690,120 L870,65 L1050,125 L1230,70 L1440,115 L1440,200 L0,200 Z" style="fill:#1F2B13" opacity="0.65"/>
+      <path d="M0,165 L190,105 L380,150 L580,90 L780,145 L980,95 L1200,140 L1440,100 L1440,200 L0,200 Z" style="fill:#FBF6EA"/>
+    </svg>
+  </div>
+</header>
+
+<main>
+  <nav class="tabs">
+    <button class="active" data-tab="input">✏️ Input Siswa</button>
+    <button data-tab="input-guru">👩‍🏫 Input Guru</button>
+    <button data-tab="rekap">💬 Form WhatsApp</button>
+    <button data-tab="guru-rekap">🗂️ Log Checklist Guru</button>
+    <button data-tab="riwayat">📚 Log Riwayat Siswa</button>
+    <button data-tab="siswa">🧒 Kelola Siswa</button>
+  </nav>
+
+  <!-- INPUT TAB (SISWA) -->
+  <section id="tab-input">
+    <div class="card">
+      <h2>Catat per Jenis Pelanggaran</h2>
+      <p class="hint">Pilih kelas, tanggal, dan satu jenis pelanggaran &mdash; lalu centang semua siswa yang sesuai sekaligus.</p>
+
+      <div class="row2">
+        <div>
+          <label for="in-kelas">Kelas</label>
+          <select id="in-kelas"></select>
+        </div>
+        <div>
+          <label for="in-tanggal">Tanggal</label>
+          <input type="date" id="in-tanggal">
+        </div>
+      </div>
+
+      <label for="in-kategori">Jenis Pelanggaran</label>
+      <select id="in-kategori"></select>
+
+      <label for="in-cari">Cari Siswa</label>
+      <input type="text" id="in-cari" placeholder="Ketik nama untuk menyaring daftar...">
+
+      <div class="quickbar">
+        <button type="button" id="btn-pilih-semua">✅ Pilih Semua</button>
+        <button type="button" id="btn-kosongkan">◻️ Kosongkan Pilihan</button>
+        <span class="count-pill" id="count-pill">0 dicentang</span>
+      </div>
+
+      <div class="student-checklist" id="student-checklist"></div>
+
+      <label for="in-catatan">Catatan Tambahan (opsional, berlaku untuk yang baru dicentang)</label>
+      <textarea id="in-catatan" rows="2" placeholder="Contoh: sudah izin lisan ke guru piket"></textarea>
+
+      <button class="btn" id="btn-simpan">💾 Simpan Catatan</button>
+      <div class="stamp" id="stamp-ok">✅ Tersimpan</div>
+    </div>
+  </section>
+
+  <!-- INPUT TAB (GURU) -->
+  <section id="tab-input-guru" style="display:none;">
+    <div class="card">
+      <h2>Checklist Tugas Harian Guru</h2>
+      <p class="hint">Pilih kelas dan tanggal, lalu centang tugas yang sudah dilakukan hari ini. Setiap centang langsung tersimpan; hapus centang untuk membatalkan catatan tugas itu.</p>
+
+      <div class="row2">
+        <div>
+          <label for="g-kelas">Kelas</label>
+          <select id="g-kelas"></select>
+        </div>
+        <div>
+          <label for="g-tanggal">Tanggal</label>
+          <input type="date" id="g-tanggal">
+        </div>
+      </div>
+
+      <div class="quickbar">
+        <span class="count-pill" id="g-count-pill">0 dari 10 selesai</span>
+      </div>
+
+      <div class="student-checklist" id="guru-checklist"></div>
+    </div>
+  </section>
+
+  <!-- RIWAYAT TAB (SISWA) -->
+  <section id="tab-riwayat" style="display:none;">
+    <div class="card">
+      <h2>Riwayat Catatan</h2>
+      <p class="hint">Format kolom: Nama, Kelas, Tanggal, Pelanggaran &mdash; siap ditempel ke spreadsheet.</p>
+      <div class="filters">
+        <select id="f-kelas"><option value="">Semua Kelas</option></select>
+      </div>
+      <div class="row2">
+        <div>
+          <label for="f-tanggal-dari">Dari Tanggal</label>
+          <input type="date" id="f-tanggal-dari">
+        </div>
+        <div>
+          <label for="f-tanggal-sampai">Sampai Tanggal</label>
+          <input type="date" id="f-tanggal-sampai">
+        </div>
+      </div>
+      <div id="print-title"></div>
+      <div id="riwayat-table"></div>
+      <button class="btn secondary" id="btn-copy-csv">📄 Salin sebagai baris Spreadsheet (Nama, Kelas, Tanggal, Pelanggaran)</button>
+      <div class="copy-note" id="copy-csv-note">Tersalin! Tempel langsung ke Google Sheets / Excel.</div>
+      <button class="btn marigold" id="btn-cetak">🖨️ Cetak / Simpan sebagai PDF</button>
+    </div>
+  </section>
+
+  <!-- REKAP WA TAB -->
+  <section id="tab-rekap" style="display:none;">
+    <div class="card">
+      <h2>Rekap untuk WhatsApp</h2>
+      <p class="hint">Pilih kelas dan tanggal, lalu salin teksnya ke grup WA.</p>
+      <div class="filters">
+        <select id="wa-kelas"></select>
+        <input type="date" id="wa-tanggal">
+      </div>
+      <div class="wa-output" id="wa-output"></div>
+      <button class="btn marigold" id="btn-copy-wa">📋 Salin Teks WhatsApp</button>
+      <div class="copy-note" id="copy-wa-note">Tersalin! Tinggal tempel di WhatsApp.</div>
+    </div>
+  </section>
+
+  <!-- LOG CHECKLIST GURU TAB (REKAP + CETAK) -->
+  <section id="tab-guru-rekap" style="display:none;">
+    <div class="card">
+      <h2>Rekap Checklist Guru</h2>
+      <p class="hint">Pilih kelas dan rentang tanggal untuk melihat tugas yang dilakukan &amp; tidak, lengkap dengan persentase per hari dan rata-rata.</p>
+      <div class="filters">
+        <select id="gr-kelas"></select>
+      </div>
+      <div class="row2">
+        <div>
+          <label for="gr-dari">Dari Tanggal</label>
+          <input type="date" id="gr-dari">
+        </div>
+        <div>
+          <label for="gr-sampai">Sampai Tanggal</label>
+          <input type="date" id="gr-sampai">
+        </div>
+      </div>
+      <div id="print-title-guru"></div>
+      <div id="guru-rekap-table"></div>
+      <button class="btn marigold" id="btn-cetak-guru">📥 Download PDF Rekap (Landscape)</button>
+    </div>
+  </section>
+
+  <!-- SISWA TAB -->
+  <section id="tab-siswa" style="display:none;">
+    <div class="card">
+      <h2>Kelola Daftar Siswa</h2>
+      <p class="hint">Tempel daftar nama (satu nama per baris) untuk kelas yang dipilih, lalu tambahkan.</p>
+      <label for="s-kelas">Kelas</label>
+      <select id="s-kelas"></select>
+      <label for="s-bulk">Daftar Nama</label>
+      <textarea id="s-bulk" rows="5" placeholder="Andra&#10;Bani&#10;Bening"></textarea>
+      <button class="btn" id="btn-add-students">➕ Tambahkan ke Kelas</button>
+      <div class="student-list" id="student-list"></div>
+    </div>
+  </section>
+
+  <footer>Data tersimpan bersama &mdash; semua wali kelas melihat &amp; mengisi data yang sama, aman diisi bersamaan.</footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function(){
+  const KELAS_LIST = ['Kelas 1','Kelas 2','Kelas 3','Kelas 4','Kelas 5','Kelas 6'];
+  const CATEGORIES = [
+    {id:'terlambat', label:'Datang Terlambat', emoji:'⏰', positiveMsg:'Alhamdulillah, hari ini tidak ada yang terlambat.'},
+    {id:'buku', label:'Tidak Membawa Buku Pelajaran', emoji:'📚', positiveMsg:'Alhamdulillah, semua siswa membawa buku pelajaran lengkap hari ini.'},
+    {id:'lunchbox', label:'Tidak Membawa Lunchbox', emoji:'🍱', positiveMsg:'Alhamdulillah, semua siswa membawa lunchbox hari ini.'},
+    {id:'infaq', label:"Tidak Membawa Infaq Jum'at", emoji:'💰', positiveMsg:"Alhamdulillah, semua siswa membawa infaq Jum'at hari ini."},
+    {id:'kuku', label:'Belum Potong Kuku', emoji:'💅', positiveMsg:'Alhamdulillah, kuku seluruh siswa sudah rapi hari ini.'},
+    {id:'catering', label:'Tidak Membawa Uang Catering', emoji:'💵', positiveMsg:'Alhamdulillah, semua siswa membawa uang catering hari ini.'}
+  ];
+  const CAT_MAP = Object.fromEntries(CATEGORIES.map(c=>[c.id,c]));
+
+  // Daftar tugas harian wali kelas — sama untuk semua kelas (mengikuti file TTT)
+  const GURU_TASKS = [
+    {id:'t1', label:'Salam dan doa bersama'},
+    {id:'t2', label:'Memaparkan daily schedule'},
+    {id:'t3', label:'Cek kehadiran (membalas WA perizinan)'},
+    {id:'t4', label:'Cek kedisplinan (shalat subuh, atribut seragam, keterlambatan)'},
+    {id:'t5', label:'Mendampingi qoilullah'},
+    {id:'t6', label:'Mengingatkan H-1 jam kepulangan siswa'},
+    {id:'t7', label:'5 menit menceritakan kisah inspiratif/motivasi'},
+    {id:'t8', label:'Cek kerapian meja, kursi, dan tas'},
+    {id:'t9', label:'Memastikan kelas bersih'},
+    {id:'t10', label:'Menuliskan target hadist/doa'}
+  ];
+  const GURU_TASK_MAP = Object.fromEntries(GURU_TASKS.map(t=>[t.id,t]));
+
+  let students = [];
+  let records = [];   // {id, studentId, name, kelas, tanggal, category, catatan}
+  let guruLog = [];   // {id, kelas, tanggal, taskId, taskLabel, timestamp}
+
+  const FIREBASE_URL = 'https://absensi-sekolah-7f355-default-rtdb.asia-southeast1.firebasedatabase.app/';
+
+  async function fetchStudents(){
+    try{
+      const res = await fetch(FIREBASE_URL + 'students.json?t=' + Date.now(), { cache: 'no-store' });
+      const data = await res.json();
+      return data || [];
+    }catch(e){ console.error('gagal ambil siswa', e); return []; }
+  }
+  async function fetchRecords(){
+    try{
+      const res = await fetch(FIREBASE_URL + 'records.json?t=' + Date.now(), { cache: 'no-store' });
+      const data = await res.json();
+      return data || [];
+    }catch(e){ console.error('gagal ambil catatan', e); return []; }
+  }
+  async function saveStudents(){
+    try{
+      await fetch(FIREBASE_URL + 'students.json', { method: 'PUT', body: JSON.stringify(students), cache: 'no-store' });
+    }catch(e){ console.error('gagal simpan siswa', e); }
+  }
+  async function saveRecordsArr(arr){
+    try{
+      await fetch(FIREBASE_URL + 'records.json', { method: 'PUT', body: JSON.stringify(arr), cache: 'no-store' });
+      records = arr;
+    }catch(e){ console.error('gagal simpan catatan', e); }
+  }
+  async function fetchGuruLog(){
+    try{
+      const res = await fetch(FIREBASE_URL + 'guru_log.json?t=' + Date.now(), { cache: 'no-store' });
+      const data = await res.json();
+      return data || [];
+    }catch(e){ console.error('gagal ambil log guru', e); return []; }
+  }
+  async function saveGuruLogArr(arr){
+    try{
+      await fetch(FIREBASE_URL + 'guru_log.json', { method: 'PUT', body: JSON.stringify(arr), cache: 'no-store' });
+      guruLog = arr;
+    }catch(e){ console.error('gagal simpan log guru', e); }
+  }
+
+  function todayStr(){
+    const d = new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function fmtTanggalPanjang(dateStr){
+    const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const d = new Date(dateStr+'T00:00:00');
+    return days[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+  }
+  function fmtTanggalPendek(dateStr){
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const d = new Date(dateStr+'T00:00:00');
+    return d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+  }
+  function uid(prefix){ return prefix+'_'+Date.now()+Math.random().toString(36).slice(2,7); }
+  function dateRangeList(dari, sampai){
+    const out = [];
+    let cur = new Date(dari+'T00:00:00');
+    const end = new Date(sampai+'T00:00:00');
+    while(cur <= end){
+      out.push(cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0')+'-'+String(cur.getDate()).padStart(2,'0'));
+      cur.setDate(cur.getDate()+1);
+    }
+    return out;
+  }
+
+  // ---------- TABS ----------
+  const tabs = document.querySelectorAll('nav.tabs button');
+  const sections = {input: 'tab-input', 'input-guru':'tab-input-guru', riwayat:'tab-riwayat', rekap:'tab-rekap', 'guru-rekap':'tab-guru-rekap', siswa:'tab-siswa'};
+  tabs.forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      tabs.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      Object.values(sections).forEach(id=>document.getElementById(id).style.display='none');
+      document.getElementById(sections[btn.dataset.tab]).style.display='block';
+      students = await fetchStudents();
+      if(btn.dataset.tab==='input'){ records = await fetchRecords(); lastContext = currentContext(); renderChecklist(true); }
+      if(btn.dataset.tab==='input-guru'){ guruLog = await fetchGuruLog(); lastGuruContext = currentGuruContext(); renderGuruChecklist(); }
+      if(btn.dataset.tab==='riwayat'){ records = await fetchRecords(); renderRiwayat(); }
+      if(btn.dataset.tab==='rekap'){ records = await fetchRecords(); renderRekap(); }
+      if(btn.dataset.tab==='guru-rekap'){ guruLog = await fetchGuruLog(); renderGuruRekap(); }
+      if(btn.dataset.tab==='siswa') renderStudentList();
+    });
+  });
+
+  function fillKelasSelects(){
+    ['in-kelas','f-kelas','wa-kelas','s-kelas','g-kelas','gr-kelas'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      KELAS_LIST.forEach(k=>{
+        const opt = document.createElement('option');
+        opt.value=k; opt.textContent=k;
+        el.appendChild(opt);
+      });
+    });
+  }
+  function fillKategoriSelect(){
+    const el = document.getElementById('in-kategori');
+    CATEGORIES.forEach(c=>{
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.emoji+' '+c.label;
+      el.appendChild(opt);
+    });
+  }
+
+  // ---------- INPUT: checklist per kategori (SISWA) ----------
+  const inKelas = document.getElementById('in-kelas');
+  const inTanggal = document.getElementById('in-tanggal');
+  const inKategori = document.getElementById('in-kategori');
+  const inCari = document.getElementById('in-cari');
+  const checklistEl = document.getElementById('student-checklist');
+  const countPill = document.getElementById('count-pill');
+
+  function currentContext(){
+    return { kelas: inKelas.value, tanggal: inTanggal.value || todayStr(), category: inKategori.value };
+  }
+
+  function updateCountPill(){
+    countPill.textContent = checkedState.size + ' dicentang';
+  }
+
+  // status centang untuk slot (kelas+tanggal+kategori) yang sedang aktif — sumber kebenaran tunggal,
+  // tidak lagi dibaca ulang dari DOM setiap render supaya tidak hilang saat difilter pencarian
+  let checkedState = new Set();
+
+  async function renderChecklist(resetSelection){
+    const {kelas, tanggal, category} = currentContext();
+    records = await fetchRecords(); // ambil data terbaru supaya sinkron dgn guru lain
+    const existingIds = new Set(
+      records.filter(r=>r.kelas===kelas && r.tanggal===tanggal && r.category===category).map(r=>r.studentId)
+    );
+    if(resetSelection){
+      checkedState = new Set(existingIds); // masuk slot baru -> mulai dari data tersimpan di server
+    }
+    const q = inCari.value.trim().toLowerCase();
+    const list = students
+      .filter(s=>s.kelas===kelas)
+      .filter(s=> !q || s.name.toLowerCase().includes(q))
+      .sort((a,b)=>a.name.localeCompare(b.name));
+
+    if(list.length===0){
+      checklistEl.innerHTML = '<div class="empty">Belum ada siswa di kelas ini. Tambahkan lewat kotak di bawah, atau lengkapi di tab Kelola Siswa.</div>';
+      updateCountPill();
+      return;
+    }
+    checklistEl.innerHTML = list.map(s=>{
+      const already = existingIds.has(s.id);
+      const checked = checkedState.has(s.id);
+      return `<label class="sc-row ${already?'already':''}" data-id="${s.id}">
+        <input type="checkbox" value="${s.id}" ${checked?'checked':''}>
+        <span>${s.name}</span>
+        ${already?'<span class="tag-existing">Sudah tercatat</span>':''}
+      </label>`;
+    }).join('');
+    checklistEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        if(cb.checked) checkedState.add(cb.value); else checkedState.delete(cb.value);
+        updateCountPill();
+        // setelah mencentang siswa hasil pencarian, blok teks di kotak cari
+        // supaya bisa langsung dihapus sekali klik/tekan
+        if(cb.checked && inCari.value.trim() !== ''){
+          inCari.focus();
+          inCari.select();
+        }
+      });
+    });
+    updateCountPill();
+  }
+
+  let lastContext = null;
+
+  async function autoSaveCurrentSelection(){
+    if(!lastContext) return;
+    const checkedIds = new Set(checkedState);
+    const {kelas, tanggal, category} = lastContext;
+    const freshRecords = await fetchRecords();
+    const sameSlot = r => r.kelas===kelas && r.tanggal===tanggal && r.category===category;
+    const otherRecords = freshRecords.filter(r=>!sameSlot(r));
+    const existingSlotRecords = freshRecords.filter(sameSlot);
+    const existingIds = new Set(existingSlotRecords.map(r=>r.studentId));
+
+    const newOnes = [];
+    checkedIds.forEach(sid=>{
+      if(!existingIds.has(sid)){
+        const st = students.find(s=>s.id===sid);
+        if(st) newOnes.push({id: uid('rec'), studentId: sid, name: st.name, kelas, tanggal, category, catatan: ''});
+      }
+    });
+    const keptExisting = existingSlotRecords.filter(r=>checkedIds.has(r.studentId));
+
+    if(newOnes.length>0 || keptExisting.length!==existingSlotRecords.length){
+      const merged = [...otherRecords, ...keptExisting, ...newOnes];
+      await saveRecordsArr(merged);
+    }
+  }
+
+  async function onContextChange(){
+    await autoSaveCurrentSelection();
+    lastContext = currentContext();
+    await renderChecklist(true);
+  }
+
+  inKelas.addEventListener('change', onContextChange);
+  inTanggal.addEventListener('change', onContextChange);
+  inKategori.addEventListener('change', onContextChange);
+  inCari.addEventListener('input', ()=>renderChecklist(false));
+
+  document.getElementById('btn-pilih-semua').addEventListener('click', ()=>{
+    checklistEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+      cb.checked = true;
+      checkedState.add(cb.value);
+    });
+    updateCountPill();
+  });
+  document.getElementById('btn-kosongkan').addEventListener('click', ()=>{
+    const adaYangSudahTercatat = checklistEl.querySelectorAll('.sc-row.already input[type=checkbox]:checked').length > 0;
+    if(adaYangSudahTercatat && !confirm('Beberapa siswa di sini sudah tercatat sebelumnya. Mengosongkan pilihan lalu menekan Simpan akan MENGHAPUS catatan mereka. Lanjutkan?')){
+      return;
+    }
+    checklistEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+      cb.checked = false;
+      checkedState.delete(cb.value);
+    });
+    updateCountPill();
+  });
+
+  const btnSimpan = document.getElementById('btn-simpan');
+  btnSimpan.addEventListener('click', async ()=>{
+    if(btnSimpan.disabled) return; // cegah klik ganda saat proses simpan sebelumnya masih berjalan
+    const {kelas, tanggal, category} = currentContext();
+    const catatan = document.getElementById('in-catatan').value.trim();
+    const checkedIds = new Set(checkedState);
+    if(checkedIds.size===0){ alert('Centang minimal satu siswa.'); return; }
+
+    btnSimpan.disabled = true;
+    const originalLabel = btnSimpan.textContent;
+    btnSimpan.textContent = '⏳ Menyimpan...';
+    try{
+
+    // ambil data terbaru supaya tidak menimpa perubahan guru lain
+    const freshRecords = await fetchRecords();
+    const sameSlot = r => r.kelas===kelas && r.tanggal===tanggal && r.category===category;
+    const otherRecords = freshRecords.filter(r=>!sameSlot(r));
+    const existingSlotRecords = freshRecords.filter(sameSlot);
+    const existingIds = new Set(existingSlotRecords.map(r=>r.studentId));
+
+    // yang baru dicentang tapi belum ada -> tambah
+    const newOnes = [];
+    checkedIds.forEach(sid=>{
+      if(!existingIds.has(sid)){
+        const st = students.find(s=>s.id===sid);
+        if(st) newOnes.push({id: uid('rec'), studentId: sid, name: st.name, kelas, tanggal, category, catatan});
+      }
+    });
+    // yang sebelumnya tercatat tapi sekarang di-uncheck oleh guru ini -> hapus
+    const keptExisting = existingSlotRecords.filter(r=>checkedIds.has(r.studentId));
+
+    const merged = [...otherRecords, ...keptExisting, ...newOnes];
+    await saveRecordsArr(merged);
+
+    document.getElementById('in-catatan').value='';
+    const stamp = document.getElementById('stamp-ok');
+    stamp.textContent = `✅ Tersimpan — ${newOnes.length} siswa baru dicatat untuk kategori ini`;
+    stamp.classList.add('show');
+    setTimeout(()=>stamp.classList.remove('show'), 2600);
+
+    await renderChecklist(true);
+
+    }finally{
+      btnSimpan.disabled = false;
+      btnSimpan.textContent = originalLabel;
+    }
+  });
+
+  // ---------- INPUT: checklist tugas harian (GURU) ----------
+  const gKelas = document.getElementById('g-kelas');
+  const gTanggal = document.getElementById('g-tanggal');
+  const guruChecklistEl = document.getElementById('guru-checklist');
+  const gCountPill = document.getElementById('g-count-pill');
+  let lastGuruContext = null;
+  let guruToggleBusy = false; // cegah dua toggle nyelonong bersamaan dan tabrakan data
+
+  function currentGuruContext(){
+    return { kelas: gKelas.value, tanggal: gTanggal.value || todayStr() };
+  }
+
+  async function renderGuruChecklist(){
+    const {kelas, tanggal} = currentGuruContext();
+    guruLog = await fetchGuruLog();
+    const doneIds = new Set(
+      guruLog.filter(r=>r.kelas===kelas && r.tanggal===tanggal).map(r=>r.taskId)
+    );
+    gCountPill.textContent = doneIds.size + ' dari ' + GURU_TASKS.length + ' selesai';
+    guruChecklistEl.innerHTML = GURU_TASKS.map(t=>{
+      const done = doneIds.has(t.id);
+      return `<label class="sc-row ${done?'already':''}" data-id="${t.id}">
+        <input type="checkbox" value="${t.id}" ${done?'checked':''}>
+        <span>${t.label}</span>
+        ${done?'<span class="tag-existing">Tersimpan</span>':''}
+      </label>`;
+    }).join('');
+    guruChecklistEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+      cb.addEventListener('change', async ()=>{
+        if(guruToggleBusy){ cb.checked = !cb.checked; return; } // abaikan klik ganda saat masih menyimpan
+        guruToggleBusy = true;
+        cb.disabled = true;
+        try{
+          await toggleGuruTask(cb.value, cb.checked);
+        }finally{
+          guruToggleBusy = false;
+        }
+        await renderGuruChecklist();
+      });
+    });
+  }
+
+  async function toggleGuruTask(taskId, checked){
+    const {kelas, tanggal} = currentGuruContext();
+    const fresh = await fetchGuruLog();
+    const sameSlot = r => r.kelas===kelas && r.tanggal===tanggal;
+    const others = fresh.filter(r=>!sameSlot(r));
+    let slotRecords = fresh.filter(sameSlot);
+    if(checked){
+      if(!slotRecords.some(r=>r.taskId===taskId)){
+        const t = GURU_TASK_MAP[taskId];
+        slotRecords.push({id: uid('glog'), kelas, tanggal, taskId, taskLabel: t.label, timestamp: Date.now()});
+      }
+    }else{
+      // "batal": hapus catatan tugas ini saja dari log, bukan seluruh slot
+      slotRecords = slotRecords.filter(r=>r.taskId!==taskId);
+    }
+    const merged = [...others, ...slotRecords];
+    await saveGuruLogArr(merged);
+  }
+
+  gKelas.addEventListener('change', ()=>{ lastGuruContext = currentGuruContext(); renderGuruChecklist(); });
+  gTanggal.addEventListener('change', ()=>{ lastGuruContext = currentGuruContext(); renderGuruChecklist(); });
+
+  // ---------- RIWAYAT (SISWA) ----------
+  function riwayatFilteredList(){
+    const fk = document.getElementById('f-kelas').value;
+    const dari = document.getElementById('f-tanggal-dari').value;
+    const sampai = document.getElementById('f-tanggal-sampai').value;
+    let list = records.slice().sort((a,b)=> a.tanggal.localeCompare(b.tanggal));
+    if(fk) list = list.filter(r=>r.kelas===fk);
+    if(dari) list = list.filter(r=>r.tanggal >= dari);
+    if(sampai) list = list.filter(r=>r.tanggal <= sampai);
+    return list;
+  }
+
+  function riwayatRangeLabel(){
+    const dari = document.getElementById('f-tanggal-dari').value;
+    const sampai = document.getElementById('f-tanggal-sampai').value;
+    if(dari && sampai) return fmtTanggalPanjang(dari) + ' s/d ' + fmtTanggalPanjang(sampai);
+    if(dari) return 'Sejak ' + fmtTanggalPanjang(dari);
+    if(sampai) return 'Sampai ' + fmtTanggalPanjang(sampai);
+    return 'Semua Tanggal';
+  }
+
+  function renderRiwayat(){
+    const list = riwayatFilteredList().slice().sort((a,b)=> b.tanggal.localeCompare(a.tanggal));
+    const fk = document.getElementById('f-kelas').value;
+
+    document.getElementById('print-title').textContent =
+      'Riwayat Kedisiplinan — ' + (fk || 'Semua Kelas') + ' — ' + riwayatRangeLabel();
+
+    const container = document.getElementById('riwayat-table');
+    if(list.length===0){
+      container.innerHTML = '<div class="empty">Belum ada catatan yang cocok dengan filter.</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>Nama</th><th>Kelas</th><th>Tanggal</th><th>Pelanggaran</th><th></th></tr></thead><tbody>';
+    list.forEach(r=>{
+      const cat = CAT_MAP[r.category];
+      const pel = cat ? cat.emoji+' '+cat.label : r.category;
+      html += `<tr>
+        <td>${r.name}</td>
+        <td><span class="kelas-tag">${r.kelas}</span></td>
+        <td>${r.tanggal}</td>
+        <td>${pel}${r.catatan?`<br><span style="color:#9A9382;font-size:12px;">${r.catatan}</span>`:''}</td>
+        <td class="del" data-id="${r.id}">&times;</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+    container.querySelectorAll('.del').forEach(td=>{
+      td.addEventListener('click', async ()=>{
+        if(!confirm('Hapus catatan ini?')) return;
+        const fresh = await fetchRecords();
+        const updated = fresh.filter(r=>r.id!==td.dataset.id);
+        await saveRecordsArr(updated);
+        renderRiwayat();
+      });
+    });
+  }
+  document.getElementById('f-kelas').addEventListener('change', renderRiwayat);
+  document.getElementById('f-tanggal-dari').addEventListener('change', renderRiwayat);
+  document.getElementById('f-tanggal-sampai').addEventListener('change', renderRiwayat);
+
+  document.getElementById('btn-copy-csv').addEventListener('click', async ()=>{
+    const list = riwayatFilteredList();
+    const rows = list.map(r=>{
+      const cat = CAT_MAP[r.category];
+      return [r.name, r.kelas, r.tanggal, cat?cat.label:r.category].join('\t');
+    });
+    const text = 'Nama\tKelas\tTanggal\tPelanggaran\n' + rows.join('\n');
+    try{
+      await navigator.clipboard.writeText(text);
+      const note = document.getElementById('copy-csv-note');
+      note.classList.add('show');
+      setTimeout(()=>note.classList.remove('show'), 2500);
+    }catch(e){ alert('Gagal menyalin. Coba salin manual.'); }
+  });
+
+  document.getElementById('btn-cetak').addEventListener('click', ()=>{
+    window.print();
+  });
+
+  // ---------- REKAP WA ----------
+  // aturan kemunculan kategori di rekap WA berdasarkan hari:
+  // - Infaq & Potong Kuku hanya tampil hari Jum'at
+  // - Uang Catering hanya tampil hari Sabtu
+  // kategori lain tetap tampil setiap hari. Ini hanya mempengaruhi tampilan
+  // di tab Rekap WA — di tab Input, semua kategori tetap bisa dicatat kapan saja.
+  const WA_ONLY_ON_DAY = { infaq: 5, kuku: 5, catering: 6 }; // 0=Minggu ... 5=Jumat, 6=Sabtu
+  function categoriesForWaDay(tanggal){
+    const dow = new Date(tanggal+'T00:00:00').getDay();
+    return CATEGORIES.filter(c => !(c.id in WA_ONLY_ON_DAY) || WA_ONLY_ON_DAY[c.id] === dow);
+  }
+
+  function buildWaText(kelas, tanggal){
+    const list = records.filter(r=>r.kelas===kelas && r.tanggal===tanggal);
+    const header = `📋 *Rekap Kedisiplinan ${kelas}*\n\n📅 *${fmtTanggalPanjang(tanggal)}*\n`;
+
+    let body = '';
+    categoriesForWaDay(tanggal).forEach(c=>{
+      const names = list.filter(r=>r.category===c.id).map(r=>r.name);
+      body += `\n${c.emoji} *${c.label}*\n`;
+      body += names.length===0
+        ? `🌟 ${c.positiveMsg} 👏🏻✨\n`
+        : listBlock(names);
+    });
+
+    const closing = `\n🌷 Semoga besok kita bisa lebih disiplin, bertanggung jawab, dan mempersiapkan segala keperluan dengan lebih baik. ✨`;
+    return header + body + closing;
+  }
+  function listBlock(names){
+    if(names.length===1) return `• ${names[0]}\n`;
+    return names.map((n,i)=>`${i+1}. ${n}`).join('\n') + '\n';
+  }
+
+  function renderRekap(){
+    const kelas = document.getElementById('wa-kelas').value || KELAS_LIST[0];
+    const tanggal = document.getElementById('wa-tanggal').value || todayStr();
+    document.getElementById('wa-kelas').value = kelas;
+    document.getElementById('wa-tanggal').value = tanggal;
+    document.getElementById('wa-output').textContent = buildWaText(kelas, tanggal);
+  }
+  document.getElementById('wa-kelas').addEventListener('change', renderRekap);
+  document.getElementById('wa-tanggal').addEventListener('change', renderRekap);
+  document.getElementById('btn-copy-wa').addEventListener('click', async ()=>{
+    const text = document.getElementById('wa-output').textContent;
+    try{
+      await navigator.clipboard.writeText(text);
+      const note = document.getElementById('copy-wa-note');
+      note.classList.add('show');
+      setTimeout(()=>note.classList.remove('show'), 2500);
+    }catch(e){ alert('Gagal menyalin. Coba salin manual.'); }
+  });
+
+  // ---------- LOG CHECKLIST GURU (REKAP + CETAK) ----------
+  const grKelas = document.getElementById('gr-kelas');
+  const grDari = document.getElementById('gr-dari');
+  const grSampai = document.getElementById('gr-sampai');
+
+  function guruRekapRangeLabel(){
+    const dari = grDari.value, sampai = grSampai.value;
+    if(dari && sampai) return fmtTanggalPanjang(dari) + ' s/d ' + fmtTanggalPanjang(sampai);
+    if(dari) return 'Sejak ' + fmtTanggalPanjang(dari);
+    if(sampai) return 'Sampai ' + fmtTanggalPanjang(sampai);
+    return '';
+  }
+
+  function renderGuruRekap(){
+    const kelas = grKelas.value || KELAS_LIST[0];
+    grKelas.value = kelas;
+    const container = document.getElementById('guru-rekap-table');
+    const titleEl = document.getElementById('print-title-guru');
+
+    if(!grDari.value || !grSampai.value){
+      titleEl.textContent = '';
+      container.innerHTML = '<div class="empty">Pilih tanggal "Dari" dan "Sampai" untuk melihat rekap.</div>';
+      return;
+    }
+    if(grDari.value > grSampai.value){
+      container.innerHTML = '<div class="empty">Tanggal "Dari" tidak boleh lebih besar dari "Sampai".</div>';
+      return;
+    }
+
+    titleEl.textContent = 'Rekap Checklist Guru — ' + kelas + ' — ' + guruRekapRangeLabel();
+
+    const days = dateRangeList(grDari.value, grSampai.value);
+    const totalTasks = GURU_TASKS.length;
+    let sumPct = 0;
+    let daysCounted = 0;
+
+    let html = '';
+    days.forEach(day=>{
+      const doneIds = new Set(
+        guruLog.filter(r=>r.kelas===kelas && r.tanggal===day).map(r=>r.taskId)
+      );
+      const doneCount = GURU_TASKS.filter(t=>doneIds.has(t.id)).length;
+      const pct = Math.round((doneCount/totalTasks)*100);
+      sumPct += pct;
+      daysCounted++;
+      const pctClass = pct < 60 ? 'low' : '';
+      html += `<div class="day-block">
+        <div class="day-head">
+          <strong>${fmtTanggalPendek(day)}</strong>
+          <span class="pct-badge ${pctClass}">${doneCount}/${totalTasks} &middot; ${pct}%</span>
+        </div>`;
+      GURU_TASKS.forEach(t=>{
+        const done = doneIds.has(t.id);
+        html += `<div class="task-line ${done?'done':'miss'}">
+          <span class="mark">${done?'✔':'✘'}</span><span>${t.label}</span>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+
+    const avgPct = daysCounted>0 ? Math.round(sumPct/daysCounted) : 0;
+    html += `<div class="summary-row"><span>Rata-rata persentase (${daysCounted} hari)</span><span class="pct-badge ${avgPct<60?'low':''}">${avgPct}%</span></div>`;
+
+    container.innerHTML = html;
+  }
+
+  // Unduh PDF landscape langsung — tidak bergantung pada pengaturan orientasi kertas
+  // di dialog print browser, supaya hasilnya konsisten landscape di semua device termasuk HP
+  function exportGuruRekapPdf(kelas, days){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+    const dayNums = days.map(d=> new Date(d+'T00:00:00').getDate());
+    const totalTasks = GURU_TASKS.length;
+    const doneCountPerDay = days.map(()=>0);
+
+    const body = GURU_TASKS.map(t=>{
+      let doneDaysForTask = 0;
+      const row = [t.label];
+      days.forEach((day, idx)=>{
+        const done = guruLog.some(r=>r.kelas===kelas && r.tanggal===day && r.taskId===t.id);
+        if(done){ doneDaysForTask++; doneCountPerDay[idx]++; }
+        row.push(done ? 'V' : 'X');
+      });
+      const pct = days.length ? Math.round((doneDaysForTask/days.length)*100) : 0;
+      row.push(pct+'%');
+      return row;
+    });
+
+    let sumDailyPct = 0;
+    const footRow = ['% Harian'];
+    doneCountPerDay.forEach(cnt=>{
+      const dPct = totalTasks ? Math.round((cnt/totalTasks)*100) : 0;
+      sumDailyPct += dPct;
+      footRow.push(dPct+'%');
+    });
+    const overallPct = days.length ? Math.round(sumDailyPct/days.length) : 0;
+    footRow.push(overallPct+'%');
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(13);
+    doc.text('Rekap Checklist Guru - ' + kelas, 10, 12);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.text(guruRekapRangeLabel(), 10, 18);
+
+    const colStyles = { 0:{ halign:'left', cellWidth:55 } };
+    dayNums.forEach((_,i)=>{ colStyles[i+1] = { cellWidth: 6.8 }; });
+    colStyles[dayNums.length+1] = { cellWidth: 13, fontStyle:'bold' };
+
+    doc.autoTable({
+      head: [['Tugas', ...dayNums.map(String), '%']],
+      body,
+      foot: [footRow],
+      startY: 22,
+      theme: 'grid',
+      styles: { fontSize:7, cellPadding:1.2, halign:'center', valign:'middle', lineColor:[201,190,158], lineWidth:0.15 },
+      headStyles: { fillColor:[196,143,1], textColor:255, fontStyle:'bold' },
+      footStyles: { fillColor:[244,238,218], textColor:[19,35,61], fontStyle:'bold' },
+      columnStyles: colStyles,
+      margin:{ left:8, right:8 }
+    });
+
+    doc.save(`Rekap_Checklist_${kelas.replace(/\s+/g,'_')}_${days[0]}_${days[days.length-1]}.pdf`);
+  }
+
+  grKelas.addEventListener('change', renderGuruRekap);
+  grDari.addEventListener('change', renderGuruRekap);
+  grSampai.addEventListener('change', renderGuruRekap);
+  document.getElementById('btn-cetak-guru').addEventListener('click', ()=>{
+    if(!grDari.value || !grSampai.value || grDari.value > grSampai.value){
+      alert('Pilih rentang tanggal "Dari" dan "Sampai" yang valid dulu.');
+      return;
+    }
+    if(!window.jspdf || !window.jspdf.jsPDF){
+      alert('Library PDF belum berhasil dimuat. Pastikan perangkat terhubung internet, lalu muat ulang halaman dan coba lagi.');
+      return;
+    }
+    const kelas = grKelas.value || KELAS_LIST[0];
+    const days = dateRangeList(grDari.value, grSampai.value);
+    try{
+      exportGuruRekapPdf(kelas, days);
+    }catch(e){
+      console.error('gagal membuat PDF', e);
+      alert('Gagal membuat PDF: ' + e.message);
+    }
+  });
+
+  // ---------- KELOLA SISWA ----------
+  function renderStudentList(){
+    const kelas = document.getElementById('s-kelas').value;
+    const list = students.filter(s=>s.kelas===kelas).sort((a,b)=>a.name.localeCompare(b.name));
+    const container = document.getElementById('student-list');
+    if(list.length===0){
+      container.innerHTML = '<div class="empty">Belum ada siswa terdaftar di kelas ini.</div>';
+      return;
+    }
+    container.innerHTML = list.map(s=>`<div class="student-row"><span>${s.name}</span><span class="x" data-id="${s.id}">&times;</span></div>`).join('');
+    container.querySelectorAll('.x').forEach(x=>{
+      x.addEventListener('click', async ()=>{
+        if(!confirm('Hapus siswa ini dari daftar?')) return;
+        students = await fetchStudents();
+        students = students.filter(s=>s.id!==x.dataset.id);
+        await saveStudents();
+        renderStudentList();
+      });
+    });
+  }
+  document.getElementById('s-kelas').addEventListener('change', renderStudentList);
+  document.getElementById('btn-add-students').addEventListener('click', async ()=>{
+    const kelas = document.getElementById('s-kelas').value;
+    const raw = document.getElementById('s-bulk').value;
+    const names = raw.split('\n').map(n=>n.trim()).filter(Boolean);
+    if(names.length===0) return;
+    students = await fetchStudents();
+    names.forEach(n=>{
+      const exists = students.some(s=>s.kelas===kelas && s.name.toLowerCase()===n.toLowerCase());
+      if(!exists){ students.push({id: uid('st'), name:n, kelas}); }
+    });
+    await saveStudents();
+    document.getElementById('s-bulk').value='';
+    renderStudentList();
+  });
+
+  // ---------- INIT ----------
+  async function init(){
+    fillKelasSelects();
+    fillKategoriSelect();
+    document.getElementById('in-tanggal').value = todayStr();
+    document.getElementById('g-tanggal').value = todayStr();
+    document.getElementById('wa-tanggal').value = todayStr();
+    document.getElementById('f-tanggal-dari').value = '';
+    document.getElementById('f-tanggal-sampai').value = '';
+    document.getElementById('gr-dari').value = '';
+    document.getElementById('gr-sampai').value = '';
+    students = await fetchStudents();
+    records = await fetchRecords();
+    lastContext = currentContext();
+    renderChecklist(true);
+  }
+  init();
+})();
+</script>
+</body>
+</html>
