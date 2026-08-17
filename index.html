@@ -214,14 +214,20 @@
     padding:2px 9px; border-radius:999px; background: var(--success-bg); color: var(--success);
   }
   .pct-badge.low{background:#FBEAE3; color:var(--coral);}
-  .day-block{border-bottom:1.5px dashed var(--line); padding: 12px 0;}
-  .day-block:last-child{border-bottom:none;}
-  .day-block .day-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
-  .day-block .day-head strong{font-size:13.5px;}
-  .task-line{display:flex; align-items:center; gap:8px; font-size:13px; padding:4px 0;}
-  .task-line .mark{width:16px; text-align:center; font-weight:700;}
-  .task-line.done .mark{color: var(--success);}
-  .task-line.miss .mark{color: var(--coral);}
+  .matrix-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; border:1.5px solid var(--line); border-radius:14px;}
+  .guru-matrix{border-collapse:collapse; width:max-content; min-width:100%;}
+  .guru-matrix th, .guru-matrix td{border:1px solid #E5DAC0; padding:6px 7px; text-align:center; font-size:12px; white-space:nowrap;}
+  .guru-matrix thead th{background:#FBF1D9; font-family:'IBM Plex Mono',monospace; font-weight:700; position:sticky; top:0;}
+  .guru-matrix td:first-child, .guru-matrix th:first-child{
+    text-align:left; white-space:normal; min-width:170px; max-width:170px; font-family:'Plus Jakarta Sans',sans-serif;
+    position:sticky; left:0; background: var(--paper); font-size:12.5px;
+  }
+  .guru-matrix thead th:first-child{background:#FBF1D9; z-index:2;}
+  .guru-matrix td.done{color: var(--success); font-weight:700;}
+  .guru-matrix td.miss{color: var(--coral);}
+  .guru-matrix td.pct-col{font-weight:700; background:#FBF1D9;}
+  .guru-matrix tfoot td{font-weight:700; background:#F4EEDA;}
+  .guru-matrix tfoot td:first-child{background:#F4EEDA;}
   .summary-row{
     display:flex; justify-content:space-between; align-items:center;
     background:#FBF1D9; border-radius:12px; padding:12px 14px; margin-top:12px; font-size:13.5px; font-weight:700;
@@ -948,35 +954,38 @@
 
     const days = dateRangeList(grDari.value, grSampai.value);
     const totalTasks = GURU_TASKS.length;
-    let sumPct = 0;
-    let daysCounted = 0;
+    const dayNums = days.map(d=> new Date(d+'T00:00:00').getDate());
+    const doneCountPerDay = days.map(()=>0);
 
-    let html = '';
-    days.forEach(day=>{
-      const doneIds = new Set(
-        guruLog.filter(r=>r.kelas===kelas && r.tanggal===day).map(r=>r.taskId)
-      );
-      const doneCount = GURU_TASKS.filter(t=>doneIds.has(t.id)).length;
-      const pct = Math.round((doneCount/totalTasks)*100);
-      sumPct += pct;
-      daysCounted++;
-      const pctClass = pct < 60 ? 'low' : '';
-      html += `<div class="day-block">
-        <div class="day-head">
-          <strong>${fmtTanggalPendek(day)}</strong>
-          <span class="pct-badge ${pctClass}">${doneCount}/${totalTasks} &middot; ${pct}%</span>
-        </div>`;
-      GURU_TASKS.forEach(t=>{
-        const done = doneIds.has(t.id);
-        html += `<div class="task-line ${done?'done':'miss'}">
-          <span class="mark">${done?'✔':'✘'}</span><span>${t.label}</span>
-        </div>`;
+    // header: nama tugas, lalu tiap tanggal, lalu kolom persentase per tugas
+    let html = '<div class="matrix-scroll"><table class="guru-matrix"><thead><tr><th>Tugas</th>';
+    dayNums.forEach(dn=> html += `<th>${dn}</th>`);
+    html += '<th>%</th></tr></thead><tbody>';
+
+    GURU_TASKS.forEach(t=>{
+      let doneDaysForTask = 0;
+      html += `<tr><td>${t.label}</td>`;
+      days.forEach((day, idx)=>{
+        const done = guruLog.some(r=>r.kelas===kelas && r.tanggal===day && r.taskId===t.id);
+        if(done){ doneDaysForTask++; doneCountPerDay[idx]++; }
+        html += `<td class="${done?'done':'miss'}">${done?'✔':'✘'}</td>`;
       });
-      html += `</div>`;
+      const taskPct = days.length ? Math.round((doneDaysForTask/days.length)*100) : 0;
+      html += `<td class="pct-col">${taskPct}%</td></tr>`;
     });
 
-    const avgPct = daysCounted>0 ? Math.round(sumPct/daysCounted) : 0;
-    html += `<div class="summary-row"><span>Rata-rata persentase (${daysCounted} hari)</span><span class="pct-badge ${avgPct<60?'low':''}">${avgPct}%</span></div>`;
+    // baris footer: persentase harian (total tugas selesai / total tugas), lalu rata-rata di pojok kanan bawah
+    let sumDailyPct = 0;
+    html += '</tbody><tfoot><tr><td>% Harian</td>';
+    doneCountPerDay.forEach(cnt=>{
+      const dPct = totalTasks ? Math.round((cnt/totalTasks)*100) : 0;
+      sumDailyPct += dPct;
+      html += `<td>${dPct}%</td>`;
+    });
+    const overallPct = days.length ? Math.round(sumDailyPct/days.length) : 0;
+    html += `<td class="pct-col">${overallPct}%</td></tr></tfoot></table></div>`;
+
+    html += `<div class="summary-row"><span>Rata-rata persentase (${days.length} hari)</span><span class="pct-badge ${overallPct<60?'low':''}">${overallPct}%</span></div>`;
 
     container.innerHTML = html;
   }
