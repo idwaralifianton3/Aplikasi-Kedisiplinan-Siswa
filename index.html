@@ -412,7 +412,7 @@
     </div>
   </section>
 
-  <footer>Data tersimpan bersama &mdash; semua wali kelas melihat &amp; mengisi data yang sama, aman diisi bersamaan.</footer>
+  <footer>Data tersimpan bersama &mdash; semua wali kelas melihat &amp; mengisi data yang sama, aman diisi bersamaan.<br><span style="font-family:'IBM Plex Mono',monospace; opacity:.8;">v18/8/2026 &mdash; tambah 5 kategori opsional</span></footer>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -426,7 +426,14 @@
     {id:'lunchbox', label:'Tidak Membawa Lunchbox', emoji:'🍱', positiveMsg:'Alhamdulillah, semua siswa membawa lunchbox hari ini.'},
     {id:'infaq', label:"Tidak Membawa Infaq Jum'at", emoji:'💰', positiveMsg:"Alhamdulillah, semua siswa membawa infaq Jum'at hari ini."},
     {id:'kuku', label:'Belum Potong Kuku', emoji:'💅', positiveMsg:'Alhamdulillah, kuku seluruh siswa sudah rapi hari ini.'},
-    {id:'catering', label:'Tidak Membawa Uang Catering', emoji:'💵', positiveMsg:'Alhamdulillah, semua siswa membawa uang catering hari ini.'}
+    {id:'catering', label:'Tidak Membawa Uang Catering', emoji:'💵', positiveMsg:'Alhamdulillah, semua siswa membawa uang catering hari ini.'},
+    // kategori opsional: muncul setiap hari di dropdown, tapi kalau tidak ada siswa yang dicatat,
+    // barisnya dilewati sepenuhnya di pesan WA (tidak ditampilkan sama sekali)
+    {id:'sholat', label:'Tidak Sholat', emoji:'🕌', optional:true},
+    {id:'kasur', label:'Tidak Membereskan Tempat Tidur', emoji:'🛏️', optional:true},
+    {id:'tidakmasuk', label:'Tidak Masuk', emoji:'🚫', optional:true},
+    {id:'bukupaket', label:'Tidak Membawa Buku Paket', emoji:'📘', optional:true},
+    {id:'bukuppmb', label:'Tidak Membawa Buku PPMB', emoji:'📗', optional:true}
   ];
   const CAT_MAP = Object.fromEntries(CATEGORIES.map(c=>[c.id,c]));
 
@@ -547,13 +554,18 @@
       });
     });
   }
-  function fillKategoriSelect(){
+  function fillKategoriSelect(tanggal){
     const el = document.getElementById('in-kategori');
-    CATEGORIES.forEach(c=>{
+    const prevValue = el.value;
+    el.innerHTML = '';
+    const validCats = categoriesForWaDay(tanggal || todayStr());
+    validCats.forEach(c=>{
       const opt = document.createElement('option');
-      opt.value = c.id; opt.textContent = c.emoji+' '+c.label;
+      opt.value = c.id; opt.textContent = c.emoji+' '+c.label+(c.optional?' (opsional)':'');
       el.appendChild(opt);
     });
+    // pertahankan kategori yang sedang dipilih kalau masih berlaku di tanggal ini
+    if(validCats.some(c=>c.id===prevValue)) el.value = prevValue;
   }
 
   // ---------- INPUT: checklist per kategori (SISWA) ----------
@@ -649,6 +661,7 @@
 
   async function onContextChange(){
     await autoSaveCurrentSelection();
+    fillKategoriSelect(inTanggal.value); // sesuaikan pilihan kategori dengan hari (mis. potong kuku hanya Jum'at)
     lastContext = currentContext();
     await renderChecklist(true);
   }
@@ -888,6 +901,8 @@
     let body = '';
     categoriesForWaDay(tanggal).forEach(c=>{
       const names = list.filter(r=>r.category===c.id).map(r=>r.name);
+      // kategori opsional yang kosong tidak perlu ditampilkan sama sekali di pesan WA
+      if(c.optional && names.length===0) return;
       body += `\n${c.emoji} *${c.label}*\n`;
       body += names.length===0
         ? `🌟 ${c.positiveMsg} 👏🏻✨\n`
@@ -1110,10 +1125,10 @@
   // ---------- INIT ----------
   async function init(){
     fillKelasSelects();
-    fillKategoriSelect();
     document.getElementById('in-tanggal').value = todayStr();
     document.getElementById('g-tanggal').value = todayStr();
     document.getElementById('wa-tanggal').value = todayStr();
+    fillKategoriSelect(todayStr());
     document.getElementById('f-tanggal-dari').value = '';
     document.getElementById('f-tanggal-sampai').value = '';
     document.getElementById('gr-dari').value = '';
