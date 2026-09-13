@@ -412,7 +412,7 @@
     </div>
   </section>
 
-  <footer>Data tersimpan bersama &mdash; semua wali kelas melihat &amp; mengisi data yang sama, aman diisi bersamaan.<br><span style="font-family:'IBM Plex Mono',monospace; opacity:.8;">v18/8/2026 &mdash; tambah 5 kategori opsional</span></footer>
+  <footer>Data tersimpan bersama &mdash; semua wali kelas melihat &amp; mengisi data yang sama, aman diisi bersamaan.<br><span style="font-family:'IBM Plex Mono',monospace; opacity:.8;">v13/9/2026 &mdash; perbaikan anti-timpa data</span></footer>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -427,8 +427,6 @@
     {id:'infaq', label:"Tidak Membawa Infaq Jum'at", emoji:'💰', positiveMsg:"Alhamdulillah, semua siswa membawa infaq Jum'at hari ini."},
     {id:'kuku', label:'Belum Potong Kuku', emoji:'💅', positiveMsg:'Alhamdulillah, kuku seluruh siswa sudah rapi hari ini.'},
     {id:'catering', label:'Tidak Membawa Uang Catering', emoji:'💵', positiveMsg:'Alhamdulillah, semua siswa membawa uang catering hari ini.'},
-    // kategori opsional: muncul setiap hari di dropdown, tapi kalau tidak ada siswa yang dicatat,
-    // barisnya dilewati sepenuhnya di pesan WA (tidak ditampilkan sama sekali)
     {id:'sholat', label:'Tidak Sholat', emoji:'🕌', optional:true},
     {id:'kasur', label:'Tidak Membereskan Tempat Tidur', emoji:'🛏️', optional:true},
     {id:'tidakmasuk', label:'Tidak Masuk', emoji:'🚫', optional:true},
@@ -437,7 +435,6 @@
   ];
   const CAT_MAP = Object.fromEntries(CATEGORIES.map(c=>[c.id,c]));
 
-  // Daftar tugas harian wali kelas — sama untuk semua kelas (mengikuti file TTT)
   const GURU_TASKS = [
     {id:'t1', label:'Salam dan doa bersama'},
     {id:'t2', label:'Memaparkan daily schedule'},
@@ -453,48 +450,60 @@
   const GURU_TASK_MAP = Object.fromEntries(GURU_TASKS.map(t=>[t.id,t]));
 
   let students = [];
-  let records = [];   // {id, studentId, name, kelas, tanggal, category, catatan}
-  let guruLog = [];   // {id, kelas, tanggal, taskId, taskLabel, timestamp}
+  let records = [];
+  let guruLog = [];
 
   const FIREBASE_URL = 'https://absensi-sekolah-7f355-default-rtdb.asia-southeast1.firebasedatabase.app/';
 
+  // PENTING: fungsi fetch di bawah ini akan MELEMPAR ERROR kalau gagal ambil data
+  // (bukan diam-diam mengembalikan array kosong seperti versi sebelumnya).
+  // Ini untuk mencegah bug fatal: kalau gagal ambil data lalu tetap lanjut menyimpan,
+  // data lama bisa TERTIMPA/TERHAPUS karena dikira "memang belum ada data".
+  async function fetchJsonOrThrow(path){
+    const res = await fetch(FIREBASE_URL + path + '.json?t=' + Date.now(), { cache: 'no-store' });
+    if(!res.ok) throw new Error('Server merespon status ' + res.status);
+    const data = await res.json();
+    return data || [];
+  }
+  async function putJsonOrThrow(path, value){
+    const res = await fetch(FIREBASE_URL + path + '.json', { method: 'PUT', body: JSON.stringify(value), cache: 'no-store' });
+    if(!res.ok) throw new Error('Server merespon status ' + res.status);
+  }
+
   async function fetchStudents(){
-    try{
-      const res = await fetch(FIREBASE_URL + 'students.json?t=' + Date.now(), { cache: 'no-store' });
-      const data = await res.json();
-      return data || [];
-    }catch(e){ console.error('gagal ambil siswa', e); return []; }
+    try{ return await fetchJsonOrThrow('students'); }
+    catch(e){ console.error('gagal ambil siswa', e); throw e; }
   }
   async function fetchRecords(){
-    try{
-      const res = await fetch(FIREBASE_URL + 'records.json?t=' + Date.now(), { cache: 'no-store' });
-      const data = await res.json();
-      return data || [];
-    }catch(e){ console.error('gagal ambil catatan', e); return []; }
-  }
-  async function saveStudents(){
-    try{
-      await fetch(FIREBASE_URL + 'students.json', { method: 'PUT', body: JSON.stringify(students), cache: 'no-store' });
-    }catch(e){ console.error('gagal simpan siswa', e); }
-  }
-  async function saveRecordsArr(arr){
-    try{
-      await fetch(FIREBASE_URL + 'records.json', { method: 'PUT', body: JSON.stringify(arr), cache: 'no-store' });
-      records = arr;
-    }catch(e){ console.error('gagal simpan catatan', e); }
+    try{ return await fetchJsonOrThrow('records'); }
+    catch(e){ console.error('gagal ambil catatan', e); throw e; }
   }
   async function fetchGuruLog(){
-    try{
-      const res = await fetch(FIREBASE_URL + 'guru_log.json?t=' + Date.now(), { cache: 'no-store' });
-      const data = await res.json();
-      return data || [];
-    }catch(e){ console.error('gagal ambil log guru', e); return []; }
+    try{ return await fetchJsonOrThrow('guru_log'); }
+    catch(e){ console.error('gagal ambil log guru', e); throw e; }
+  }
+  async function saveStudents(){
+    await putJsonOrThrow('students', students);
+  }
+  async function saveRecordsArr(arr){
+    await putJsonOrThrow('records', arr);
+    records = arr;
   }
   async function saveGuruLogArr(arr){
+    await putJsonOrThrow('guru_log', arr);
+    guruLog = arr;
+  }
+
+  // Untuk tampilan (bukan sebelum-menyimpan): kalau fetch gagal, JANGAN kosongkan
+  // data yang sudah ada di layar — cukup kasih tahu dan pertahankan tampilan lama.
+  async function safeFetchForDisplay(fetchFn, fallbackArr, labelForAlert){
     try{
-      await fetch(FIREBASE_URL + 'guru_log.json', { method: 'PUT', body: JSON.stringify(arr), cache: 'no-store' });
-      guruLog = arr;
-    }catch(e){ console.error('gagal simpan log guru', e); }
+      return await fetchFn();
+    }catch(e){
+      console.error(labelForAlert, e);
+      alert('Gagal memuat data terbaru (' + labelForAlert + '). Coba periksa koneksi internet lalu buka ulang halaman ini.');
+      return fallbackArr;
+    }
   }
 
   function todayStr(){
@@ -533,12 +542,12 @@
       btn.classList.add('active');
       Object.values(sections).forEach(id=>document.getElementById(id).style.display='none');
       document.getElementById(sections[btn.dataset.tab]).style.display='block';
-      students = await fetchStudents();
-      if(btn.dataset.tab==='input'){ records = await fetchRecords(); lastContext = currentContext(); renderChecklist(true); }
-      if(btn.dataset.tab==='input-guru'){ guruLog = await fetchGuruLog(); lastGuruContext = currentGuruContext(); renderGuruChecklist(); }
-      if(btn.dataset.tab==='riwayat'){ records = await fetchRecords(); renderRiwayat(); }
-      if(btn.dataset.tab==='rekap'){ records = await fetchRecords(); renderRekap(); }
-      if(btn.dataset.tab==='guru-rekap'){ guruLog = await fetchGuruLog(); renderGuruRekap(); }
+      students = await safeFetchForDisplay(fetchStudents, students, 'daftar siswa');
+      if(btn.dataset.tab==='input'){ records = await safeFetchForDisplay(fetchRecords, records, 'catatan pelanggaran'); lastContext = currentContext(); renderChecklist(true); }
+      if(btn.dataset.tab==='input-guru'){ guruLog = await safeFetchForDisplay(fetchGuruLog, guruLog, 'log guru'); lastGuruContext = currentGuruContext(); renderGuruChecklist(); }
+      if(btn.dataset.tab==='riwayat'){ records = await safeFetchForDisplay(fetchRecords, records, 'catatan pelanggaran'); renderRiwayat(); }
+      if(btn.dataset.tab==='rekap'){ records = await safeFetchForDisplay(fetchRecords, records, 'catatan pelanggaran'); renderRekap(); }
+      if(btn.dataset.tab==='guru-rekap'){ guruLog = await safeFetchForDisplay(fetchGuruLog, guruLog, 'log guru'); renderGuruRekap(); }
       if(btn.dataset.tab==='siswa') renderStudentList();
     });
   });
@@ -564,7 +573,6 @@
       opt.value = c.id; opt.textContent = c.emoji+' '+c.label+(c.optional?' (opsional)':'');
       el.appendChild(opt);
     });
-    // pertahankan kategori yang sedang dipilih kalau masih berlaku di tanggal ini
     if(validCats.some(c=>c.id===prevValue)) el.value = prevValue;
   }
 
@@ -584,18 +592,21 @@
     countPill.textContent = checkedState.size + ' dicentang';
   }
 
-  // status centang untuk slot (kelas+tanggal+kategori) yang sedang aktif — sumber kebenaran tunggal,
-  // tidak lagi dibaca ulang dari DOM setiap render supaya tidak hilang saat difilter pencarian
   let checkedState = new Set();
 
   async function renderChecklist(resetSelection){
     const {kelas, tanggal, category} = currentContext();
-    records = await fetchRecords(); // ambil data terbaru supaya sinkron dgn guru lain
+    try{
+      records = await fetchRecords();
+    }catch(e){
+      alert('Gagal memuat catatan terbaru. Periksa koneksi internet, lalu coba lagi.');
+      return;
+    }
     const existingIds = new Set(
       records.filter(r=>r.kelas===kelas && r.tanggal===tanggal && r.category===category).map(r=>r.studentId)
     );
     if(resetSelection){
-      checkedState = new Set(existingIds); // masuk slot baru -> mulai dari data tersimpan di server
+      checkedState = new Set(existingIds);
     }
     const q = inCari.value.trim().toLowerCase();
     const list = students
@@ -604,7 +615,7 @@
       .sort((a,b)=>a.name.localeCompare(b.name));
 
     if(list.length===0){
-      checklistEl.innerHTML = '<div class="empty">Belum ada siswa di kelas ini. Tambahkan lewat kotak di bawah, atau lengkapi di tab Kelola Siswa.</div>';
+      checklistEl.innerHTML = '<div class="empty">Belum ada siswa di kelas ini. Lengkapi dulu lewat tab Kelola Siswa.</div>';
       updateCountPill();
       return;
     }
@@ -621,8 +632,6 @@
       cb.addEventListener('change', ()=>{
         if(cb.checked) checkedState.add(cb.value); else checkedState.delete(cb.value);
         updateCountPill();
-        // setelah mencentang siswa hasil pencarian, blok teks di kotak cari
-        // supaya bisa langsung dihapus sekali klik/tekan
         if(cb.checked && inCari.value.trim() !== ''){
           inCari.focus();
           inCari.select();
@@ -638,7 +647,13 @@
     if(!lastContext) return;
     const checkedIds = new Set(checkedState);
     const {kelas, tanggal, category} = lastContext;
-    const freshRecords = await fetchRecords();
+    let freshRecords;
+    try{
+      freshRecords = await fetchRecords();
+    }catch(e){
+      alert('Gagal menyimpan otomatis (koneksi bermasalah). Silakan tekan tombol Simpan Catatan secara manual setelah koneksi kembali normal.');
+      return;
+    }
     const sameSlot = r => r.kelas===kelas && r.tanggal===tanggal && r.category===category;
     const otherRecords = freshRecords.filter(r=>!sameSlot(r));
     const existingSlotRecords = freshRecords.filter(sameSlot);
@@ -655,13 +670,17 @@
 
     if(newOnes.length>0 || keptExisting.length!==existingSlotRecords.length){
       const merged = [...otherRecords, ...keptExisting, ...newOnes];
-      await saveRecordsArr(merged);
+      try{
+        await saveRecordsArr(merged);
+      }catch(e){
+        alert('Gagal menyimpan otomatis (koneksi bermasalah). Silakan cek tab Riwayat untuk memastikan data tersimpan, atau coba lagi.');
+      }
     }
   }
 
   async function onContextChange(){
     await autoSaveCurrentSelection();
-    fillKategoriSelect(inTanggal.value); // sesuaikan pilihan kategori dengan hari (mis. potong kuku hanya Jum'at)
+    fillKategoriSelect(inTanggal.value);
     lastContext = currentContext();
     await renderChecklist(true);
   }
@@ -692,7 +711,7 @@
 
   const btnSimpan = document.getElementById('btn-simpan');
   btnSimpan.addEventListener('click', async ()=>{
-    if(btnSimpan.disabled) return; // cegah klik ganda saat proses simpan sebelumnya masih berjalan
+    if(btnSimpan.disabled) return;
     const {kelas, tanggal, category} = currentContext();
     const catatan = document.getElementById('in-catatan').value.trim();
     const checkedIds = new Set(checkedState);
@@ -702,35 +721,43 @@
     const originalLabel = btnSimpan.textContent;
     btnSimpan.textContent = '⏳ Menyimpan...';
     try{
-
-    // ambil data terbaru supaya tidak menimpa perubahan guru lain
-    const freshRecords = await fetchRecords();
-    const sameSlot = r => r.kelas===kelas && r.tanggal===tanggal && r.category===category;
-    const otherRecords = freshRecords.filter(r=>!sameSlot(r));
-    const existingSlotRecords = freshRecords.filter(sameSlot);
-    const existingIds = new Set(existingSlotRecords.map(r=>r.studentId));
-
-    // yang baru dicentang tapi belum ada -> tambah
-    const newOnes = [];
-    checkedIds.forEach(sid=>{
-      if(!existingIds.has(sid)){
-        const st = students.find(s=>s.id===sid);
-        if(st) newOnes.push({id: uid('rec'), studentId: sid, name: st.name, kelas, tanggal, category, catatan});
+      let freshRecords;
+      try{
+        freshRecords = await fetchRecords();
+      }catch(e){
+        alert('Gagal menyimpan: tidak bisa mengambil data terbaru dari server. Periksa koneksi internet lalu coba tekan Simpan lagi. Data belum berubah, aman.');
+        return;
       }
-    });
-    // yang sebelumnya tercatat tapi sekarang di-uncheck oleh guru ini -> hapus
-    const keptExisting = existingSlotRecords.filter(r=>checkedIds.has(r.studentId));
 
-    const merged = [...otherRecords, ...keptExisting, ...newOnes];
-    await saveRecordsArr(merged);
+      const sameSlot = r => r.kelas===kelas && r.tanggal===tanggal && r.category===category;
+      const otherRecords = freshRecords.filter(r=>!sameSlot(r));
+      const existingSlotRecords = freshRecords.filter(sameSlot);
+      const existingIds = new Set(existingSlotRecords.map(r=>r.studentId));
 
-    document.getElementById('in-catatan').value='';
-    const stamp = document.getElementById('stamp-ok');
-    stamp.textContent = `✅ Tersimpan — ${newOnes.length} siswa baru dicatat untuk kategori ini`;
-    stamp.classList.add('show');
-    setTimeout(()=>stamp.classList.remove('show'), 2600);
+      const newOnes = [];
+      checkedIds.forEach(sid=>{
+        if(!existingIds.has(sid)){
+          const st = students.find(s=>s.id===sid);
+          if(st) newOnes.push({id: uid('rec'), studentId: sid, name: st.name, kelas, tanggal, category, catatan});
+        }
+      });
+      const keptExisting = existingSlotRecords.filter(r=>checkedIds.has(r.studentId));
 
-    await renderChecklist(true);
+      const merged = [...otherRecords, ...keptExisting, ...newOnes];
+      try{
+        await saveRecordsArr(merged);
+      }catch(e){
+        alert('Gagal menyimpan ke server. Periksa koneksi internet lalu coba tekan Simpan lagi.');
+        return;
+      }
+
+      document.getElementById('in-catatan').value='';
+      const stamp = document.getElementById('stamp-ok');
+      stamp.textContent = `✅ Tersimpan — ${newOnes.length} siswa baru dicatat untuk kategori ini`;
+      stamp.classList.add('show');
+      setTimeout(()=>stamp.classList.remove('show'), 2600);
+
+      await renderChecklist(true);
 
     }finally{
       btnSimpan.disabled = false;
@@ -744,7 +771,7 @@
   const guruChecklistEl = document.getElementById('guru-checklist');
   const gCountPill = document.getElementById('g-count-pill');
   let lastGuruContext = null;
-  let guruToggleBusy = false; // cegah dua toggle nyelonong bersamaan dan tabrakan data
+  let guruToggleBusy = false;
 
   function currentGuruContext(){
     return { kelas: gKelas.value, tanggal: gTanggal.value || todayStr() };
@@ -752,7 +779,12 @@
 
   async function renderGuruChecklist(){
     const {kelas, tanggal} = currentGuruContext();
-    guruLog = await fetchGuruLog();
+    try{
+      guruLog = await fetchGuruLog();
+    }catch(e){
+      alert('Gagal memuat log guru terbaru. Periksa koneksi internet, lalu coba lagi.');
+      return;
+    }
     const doneIds = new Set(
       guruLog.filter(r=>r.kelas===kelas && r.tanggal===tanggal).map(r=>r.taskId)
     );
@@ -767,22 +799,31 @@
     }).join('');
     guruChecklistEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
       cb.addEventListener('change', async ()=>{
-        if(guruToggleBusy){ cb.checked = !cb.checked; return; } // abaikan klik ganda saat masih menyimpan
+        if(guruToggleBusy){ cb.checked = !cb.checked; return; }
         guruToggleBusy = true;
         cb.disabled = true;
-        try{
-          await toggleGuruTask(cb.value, cb.checked);
-        }finally{
-          guruToggleBusy = false;
+        const ok = await toggleGuruTask(cb.value, cb.checked);
+        guruToggleBusy = false;
+        if(ok){
+          await renderGuruChecklist();
+        }else{
+          cb.checked = !cb.checked; // batalkan tampilan karena gagal simpan
+          cb.disabled = false;
         }
-        await renderGuruChecklist();
       });
     });
   }
 
+  // Mengembalikan true kalau berhasil simpan, false kalau gagal (supaya UI bisa dibatalkan)
   async function toggleGuruTask(taskId, checked){
     const {kelas, tanggal} = currentGuruContext();
-    const fresh = await fetchGuruLog();
+    let fresh;
+    try{
+      fresh = await fetchGuruLog();
+    }catch(e){
+      alert('Gagal menyimpan: tidak bisa mengambil data terbaru dari server. Periksa koneksi internet lalu coba centang lagi. Data lama AMAN, tidak berubah.');
+      return false;
+    }
     const sameSlot = r => r.kelas===kelas && r.tanggal===tanggal;
     const others = fresh.filter(r=>!sameSlot(r));
     let slotRecords = fresh.filter(sameSlot);
@@ -792,11 +833,16 @@
         slotRecords.push({id: uid('glog'), kelas, tanggal, taskId, taskLabel: t.label, timestamp: Date.now()});
       }
     }else{
-      // "batal": hapus catatan tugas ini saja dari log, bukan seluruh slot
       slotRecords = slotRecords.filter(r=>r.taskId!==taskId);
     }
     const merged = [...others, ...slotRecords];
-    await saveGuruLogArr(merged);
+    try{
+      await saveGuruLogArr(merged);
+      return true;
+    }catch(e){
+      alert('Gagal menyimpan ke server. Periksa koneksi internet lalu coba centang lagi.');
+      return false;
+    }
   }
 
   gKelas.addEventListener('change', ()=>{ lastGuruContext = currentGuruContext(); renderGuruChecklist(); });
@@ -852,9 +898,20 @@
     container.querySelectorAll('.del').forEach(td=>{
       td.addEventListener('click', async ()=>{
         if(!confirm('Hapus catatan ini?')) return;
-        const fresh = await fetchRecords();
+        let fresh;
+        try{
+          fresh = await fetchRecords();
+        }catch(e){
+          alert('Gagal menghapus: tidak bisa mengambil data terbaru. Periksa koneksi internet lalu coba lagi.');
+          return;
+        }
         const updated = fresh.filter(r=>r.id!==td.dataset.id);
-        await saveRecordsArr(updated);
+        try{
+          await saveRecordsArr(updated);
+        }catch(e){
+          alert('Gagal menyimpan perubahan ke server. Coba lagi.');
+          return;
+        }
         renderRiwayat();
       });
     });
@@ -883,12 +940,7 @@
   });
 
   // ---------- REKAP WA ----------
-  // aturan kemunculan kategori di rekap WA berdasarkan hari:
-  // - Infaq & Potong Kuku hanya tampil hari Jum'at
-  // - Uang Catering hanya tampil hari Sabtu
-  // kategori lain tetap tampil setiap hari. Ini hanya mempengaruhi tampilan
-  // di tab Rekap WA — di tab Input, semua kategori tetap bisa dicatat kapan saja.
-  const WA_ONLY_ON_DAY = { infaq: 5, kuku: 5, catering: 6 }; // 0=Minggu ... 5=Jumat, 6=Sabtu
+  const WA_ONLY_ON_DAY = { infaq: 5, kuku: 5, catering: 6 };
   function categoriesForWaDay(tanggal){
     const dow = new Date(tanggal+'T00:00:00').getDay();
     return CATEGORIES.filter(c => !(c.id in WA_ONLY_ON_DAY) || WA_ONLY_ON_DAY[c.id] === dow);
@@ -901,7 +953,6 @@
     let body = '';
     categoriesForWaDay(tanggal).forEach(c=>{
       const names = list.filter(r=>r.category===c.id).map(r=>r.name);
-      // kategori opsional yang kosong tidak perlu ditampilkan sama sekali di pesan WA
       if(c.optional && names.length===0) return;
       body += `\n${c.emoji} *${c.label}*\n`;
       body += names.length===0
@@ -972,7 +1023,6 @@
     const dayNums = days.map(d=> new Date(d+'T00:00:00').getDate());
     const doneCountPerDay = days.map(()=>0);
 
-    // header: nama tugas, lalu tiap tanggal, lalu kolom persentase per tugas
     let html = '<div class="matrix-scroll"><table class="guru-matrix"><thead><tr><th>Tugas</th>';
     dayNums.forEach(dn=> html += `<th>${dn}</th>`);
     html += '<th>%</th></tr></thead><tbody>';
@@ -989,7 +1039,6 @@
       html += `<td class="pct-col">${taskPct}%</td></tr>`;
     });
 
-    // baris footer: persentase harian (total tugas selesai / total tugas), lalu rata-rata di pojok kanan bawah
     let sumDailyPct = 0;
     html += '</tbody><tfoot><tr><td>% Harian</td>';
     doneCountPerDay.forEach(cnt=>{
@@ -1005,8 +1054,6 @@
     container.innerHTML = html;
   }
 
-  // Unduh PDF landscape langsung — tidak bergantung pada pengaturan orientasi kertas
-  // di dialog print browser, supaya hasilnya konsisten landscape di semua device termasuk HP
   function exportGuruRekapPdf(kelas, days){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
@@ -1099,9 +1146,21 @@
     container.querySelectorAll('.x').forEach(x=>{
       x.addEventListener('click', async ()=>{
         if(!confirm('Hapus siswa ini dari daftar?')) return;
-        students = await fetchStudents();
-        students = students.filter(s=>s.id!==x.dataset.id);
-        await saveStudents();
+        let fresh;
+        try{
+          fresh = await fetchStudents();
+        }catch(e){
+          alert('Gagal menghapus: tidak bisa mengambil data terbaru. Periksa koneksi internet lalu coba lagi.');
+          return;
+        }
+        const updated = fresh.filter(s=>s.id!==x.dataset.id);
+        students = updated;
+        try{
+          await saveStudents();
+        }catch(e){
+          alert('Gagal menyimpan perubahan ke server. Coba lagi.');
+          return;
+        }
         renderStudentList();
       });
     });
@@ -1112,12 +1171,24 @@
     const raw = document.getElementById('s-bulk').value;
     const names = raw.split('\n').map(n=>n.trim()).filter(Boolean);
     if(names.length===0) return;
-    students = await fetchStudents();
+    let fresh;
+    try{
+      fresh = await fetchStudents();
+    }catch(e){
+      alert('Gagal menambah: tidak bisa mengambil data terbaru dari server. Periksa koneksi internet lalu coba lagi. Belum ada yang ditambahkan.');
+      return;
+    }
+    students = fresh;
     names.forEach(n=>{
       const exists = students.some(s=>s.kelas===kelas && s.name.toLowerCase()===n.toLowerCase());
       if(!exists){ students.push({id: uid('st'), name:n, kelas}); }
     });
-    await saveStudents();
+    try{
+      await saveStudents();
+    }catch(e){
+      alert('Gagal menyimpan ke server. Periksa koneksi internet lalu coba lagi.');
+      return;
+    }
     document.getElementById('s-bulk').value='';
     renderStudentList();
   });
@@ -1133,8 +1204,12 @@
     document.getElementById('f-tanggal-sampai').value = '';
     document.getElementById('gr-dari').value = '';
     document.getElementById('gr-sampai').value = '';
-    students = await fetchStudents();
-    records = await fetchRecords();
+    try{
+      students = await fetchStudents();
+      records = await fetchRecords();
+    }catch(e){
+      alert('Gagal memuat data awal. Periksa koneksi internet, lalu muat ulang halaman ini.');
+    }
     lastContext = currentContext();
     renderChecklist(true);
   }
