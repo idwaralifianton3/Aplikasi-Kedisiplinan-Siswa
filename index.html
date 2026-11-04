@@ -429,7 +429,7 @@
     </div>
   </section>
 
-  <footer>Data tersimpan bersama &mdash; semua wali kelas melihat &amp; mengisi data yang sama, aman diisi bersamaan.<br><span style="font-family:'IBM Plex Mono',monospace; opacity:.8;">v4/11/2026 &mdash; tambah catatan kebaikan &amp; keburukan</span></footer>
+  <footer>Data tersimpan bersama &mdash; semua wali kelas melihat &amp; mengisi data yang sama, aman diisi bersamaan.<br><span style="font-family:'IBM Plex Mono',monospace; opacity:.8;">v4/11/2026b &mdash; tambah pesan WhatsApp kebaikan</span></footer>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1250,6 +1250,29 @@
     if(!res.ok) throw new Error('Server merespon status '+res.status);
   }
 
+  function buildWaGood(items, tanggal, kelas, withAkt){
+    const list = items.filter(r=>r.tanggal===tanggal && (!kelas || r.kelas===kelas))
+      .sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));
+    const seen = new Map();
+    list.forEach(r=>{
+      const key = r.studentId || (r.name+'|'+r.kelas);
+      const akt = String(r.aktivitas||'').replace(/\s+/g,' ').trim();
+      if(!seen.has(key)) seen.set(key, {name:r.name, kelas:r.kelas, akt: akt?[akt]:[]});
+      else if(akt && !seen.get(key).akt.includes(akt)) seen.get(key).akt.push(akt);
+    });
+    const arr = Array.from(seen.values()).sort((a,b)=>a.name.localeCompare(b.name));
+    if(arr.length===0) return 'Belum ada catatan kebaikan untuk tanggal ini' + (kelas?' di '+kelas:'') + '.';
+    const bar = '━━━━━━━━━━━━━━━━━━';
+    let t = `*🌟 TODAY'S GOOD ATTITUDE 🌟*\n${bar}\n✨ Appreciating Good Character, Building Great Habits ✨\n\n📅 ${fmtTanggalPanjang(tanggal)}` + (kelas?`\n🏫 ${kelas}`:'') + `\n${bar}\n\n`;
+    t += `Thank you for showing good character today!\nBerikut adalah siswa-siswi yang hari ini menunjukkan perilaku dan akhlak terpuji:\n\n`;
+    t += arr.map((a,i)=> `${i+1}. 🌟 ${a.name}` + (kelas?'':` (${a.kelas})`) + (withAkt && a.akt.length ? ` — ${a.akt.join('; ')}` : '')).join('\n');
+    t += `\n\n👏 Total: ${arr.length} siswa teladan hari ini\n${bar}\n\n`;
+    t += `Teruslah menebarkan kebaikan. Semoga menjadi kebiasaan baik yang tumbuh dalam kehidupan sehari-hari. 🌿\n\n`;
+    t += `*_Untuk anak-anak yang hari ini telah melakukan kebaikan, tetapi belum tercatat atau belum sempat teramati oleh Bapak/Ibu Guru, tetaplah semangat! Jangan pernah berhenti berbuat baik hanya karena namamu belum disebutkan. Ingat, Allah Maha Mengetahui setiap kebaikan, dan tidak ada satu pun amal baik yang luput dari catatan-Nya. 🤍_*\n\n`;
+    t += `Keep hamasah! Keep being kind and inspiring! 🌱`;
+    return t;
+  }
+
   function setupLog(cfg){
     const sec = document.getElementById('tab-'+cfg.id);
     sec.innerHTML = `
@@ -1270,6 +1293,18 @@
         <button class="btn lg-submit">💾 Submit</button>
         <div class="stamp lg-stamp"></div>
       </div>
+      ${cfg.wa ? `<div class="card">
+        <h2>Pesan WhatsApp Kebaikan</h2>
+        <p class="hint">Pilih tanggal (dan kelas), lalu salin pesannya ke grup WA.</p>
+        <div class="row2">
+          <div><label>Tanggal</label><input type="date" class="wa-tgl"></div>
+          <div><label>Kelas</label><select class="wa-kls"><option value="">Semua Kelas</option>${KELAS_LIST.map(k=>`<option>${k}</option>`).join('')}</select></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:600;margin-top:12px;"><input type="checkbox" class="wa-akt" style="width:auto;"> Sertakan aktivitas kebaikan di samping nama</label>
+        <div class="wa-output lg-wa-out" style="margin-top:12px;"></div>
+        <button class="btn marigold lg-wa-copy">📋 Salin Pesan WhatsApp</button>
+        <div class="copy-note lg-wa-note">Tersalin! Tinggal tempel di WhatsApp.</div>
+      </div>` : ''}
       <div class="card">
         <h2>Riwayat ${cfg.title}</h2>
         <div class="filters"><select class="lg-fk"><option value="">Semua Kelas</option>${KELAS_LIST.map(k=>`<option>${k}</option>`).join('')}</select></div>
@@ -1288,6 +1323,7 @@
     tgl.value = todayStr();
     let selected = [];
     let items = [];
+    let renderWa = ()=>{};
 
     function renderChips(){
       chips.innerHTML = selected.map(s=>`<span class="chip">${esc(s.name)} (${esc(s.kelas)}) <b data-id="${esc(s.id)}">&times;</b></span>`).join('');
@@ -1351,9 +1387,22 @@
     async function refresh(){
       try{ items = await fbList(cfg.path); }
       catch(e){ alert('Gagal memuat catatan '+cfg.title.toLowerCase()+'. Periksa koneksi internet lalu buka ulang tab ini.'); return; }
-      renderList();
+      renderList(); renderWa();
     }
     [fk,dari,sampai].forEach(el=>el.addEventListener('change', renderList));
+    if(cfg.wa){
+      const waTgl=$('.wa-tgl'), waKls=$('.wa-kls'), waAkt=$('.wa-akt'), waOut=$('.lg-wa-out');
+      waTgl.value = todayStr();
+      renderWa = ()=>{ waOut.textContent = buildWaGood(items, waTgl.value || todayStr(), waKls.value, waAkt.checked); };
+      [waTgl,waKls,waAkt].forEach(el=>el.addEventListener('change', renderWa));
+      $('.lg-wa-copy').addEventListener('click', async ()=>{
+        try{
+          await navigator.clipboard.writeText(waOut.textContent);
+          const n = $('.lg-wa-note'); n.classList.add('show'); setTimeout(()=>n.classList.remove('show'), 2500);
+        }catch(e){ alert('Gagal menyalin. Coba salin manual.'); }
+      });
+      renderWa();
+    }
 
     btn.addEventListener('click', async ()=>{
       if(btn.disabled) return;
@@ -1400,7 +1449,7 @@
 
     logModules[cfg.id] = { show: ()=>{ renderChips(); refresh(); } };
   }
-  setupLog({id:'kebaikan', title:'Kebaikan', path:'kebaikan', actLabel:'Aktivitas Kebaikan', actPh:'Contoh: membantu temannya membawa buku ke perpustakaan'});
+  setupLog({id:'kebaikan', wa:true, title:'Kebaikan', path:'kebaikan', actLabel:'Aktivitas Kebaikan', actPh:'Contoh: membantu temannya membawa buku ke perpustakaan'});
   setupLog({id:'keburukan', title:'Keburukan', path:'keburukan', actLabel:'Aktivitas Keburukan', actPh:'Contoh: berkata kasar kepada teman saat istirahat'});
 
   // ---------- INIT ----------
