@@ -608,10 +608,10 @@
     if(resetSelection){
       checkedState = new Set(existingIds);
     }
-    const q = inCari.value.trim().toLowerCase();
+    // Catatan: daftar DITAMPILKAN SEMUA siswa di kelas ini (tanpa filter pencarian di sini).
+    // Pencarian hanya menyembunyikan/menampilkan baris lewat applySearchFilter(), tanpa ambil ulang data dari server.
     const list = students
       .filter(s=>s.kelas===kelas)
-      .filter(s=> !q || s.name.toLowerCase().includes(q))
       .sort((a,b)=>a.name.localeCompare(b.name));
 
     if(list.length===0){
@@ -622,7 +622,7 @@
     checklistEl.innerHTML = list.map(s=>{
       const already = existingIds.has(s.id);
       const checked = checkedState.has(s.id);
-      return `<label class="sc-row ${already?'already':''}" data-id="${s.id}">
+      return `<label class="sc-row ${already?'already':''}" data-id="${s.id}" data-name="${s.name.toLowerCase()}">
         <input type="checkbox" value="${s.id}" ${checked?'checked':''}>
         <span>${s.name}</span>
         ${already?'<span class="tag-existing">Sudah tercatat</span>':''}
@@ -639,6 +639,17 @@
       });
     });
     updateCountPill();
+    applySearchFilter();
+  }
+
+  // Filter pencarian: HANYA menyembunyikan/menampilkan baris yang sudah ada di layar (tanpa fetch ke server
+  // dan tanpa membongkar ulang checklist), supaya centangan yang belum disimpan tidak pernah hilang saat mengetik.
+  function applySearchFilter(){
+    const q = inCari.value.trim().toLowerCase();
+    checklistEl.querySelectorAll('.sc-row').forEach(row=>{
+      const name = row.getAttribute('data-name') || '';
+      row.style.display = (!q || name.includes(q)) ? '' : 'none';
+    });
   }
 
   let lastContext = null;
@@ -688,21 +699,29 @@
   inKelas.addEventListener('change', onContextChange);
   inTanggal.addEventListener('change', onContextChange);
   inKategori.addEventListener('change', onContextChange);
-  inCari.addEventListener('input', ()=>renderChecklist(false));
+  inCari.addEventListener('input', applySearchFilter);
 
   document.getElementById('btn-pilih-semua').addEventListener('click', ()=>{
-    checklistEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    checklistEl.querySelectorAll('.sc-row').forEach(row=>{
+      if(row.style.display === 'none') return;
+      const cb = row.querySelector('input[type=checkbox]');
+      if(!cb) return;
       cb.checked = true;
       checkedState.add(cb.value);
     });
     updateCountPill();
   });
   document.getElementById('btn-kosongkan').addEventListener('click', ()=>{
-    const adaYangSudahTercatat = checklistEl.querySelectorAll('.sc-row.already input[type=checkbox]:checked').length > 0;
+    const adaYangSudahTercatat = Array.from(checklistEl.querySelectorAll('.sc-row.already'))
+      .filter(row=>row.style.display !== 'none')
+      .some(row=>row.querySelector('input[type=checkbox]:checked'));
     if(adaYangSudahTercatat && !confirm('Beberapa siswa di sini sudah tercatat sebelumnya. Mengosongkan pilihan lalu menekan Simpan akan MENGHAPUS catatan mereka. Lanjutkan?')){
       return;
     }
-    checklistEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    checklistEl.querySelectorAll('.sc-row').forEach(row=>{
+      if(row.style.display === 'none') return;
+      const cb = row.querySelector('input[type=checkbox]');
+      if(!cb) return;
       cb.checked = false;
       checkedState.delete(cb.value);
     });
