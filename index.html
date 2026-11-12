@@ -232,6 +232,17 @@
     display:flex; justify-content:space-between; align-items:center;
     background:#FBF1D9; border-radius:12px; padding:12px 14px; margin-top:12px; font-size:13.5px; font-weight:700;
   }
+  .chipbox{display:flex; flex-wrap:wrap; gap:6px; align-items:center; border:1.5px solid var(--line); background:var(--bg); border-radius:16px; padding:9px 10px; min-height:50px;}
+  .chipbox:focus-within{border-color:var(--gold); box-shadow:0 0 0 3px rgba(196,143,1,.16);}
+  .chipbox input{flex:1; min-width:140px; border:none !important; background:transparent !important; box-shadow:none !important; padding:4px !important;}
+  .chip{display:inline-flex; align-items:center; gap:6px; background:var(--navy); color:#fff; font-size:13px; font-weight:600; padding:5px 10px; border-radius:999px;}
+  .chip b{cursor:pointer; color:var(--amber);}
+  .sugwrap{position:relative;}
+  .suggest{position:absolute; left:0; right:0; top:4px; z-index:20; background:var(--paper); border:1.5px solid var(--line); border-radius:14px; box-shadow:0 8px 24px rgba(19,35,61,.15); max-height:240px; overflow-y:auto;}
+  .sug-item{padding:10px 13px; font-size:14.5px; cursor:pointer; border-bottom:1px solid #F1EAD5; display:flex; justify-content:space-between; gap:8px;}
+  .sug-item:hover{background:#FBF1D9;}
+  .sug-empty{padding:10px 13px; font-size:13px; color:#A79E80;}
+  textarea.lg-akt{border-radius:16px; padding:12px 14px;}
   @media print{
     header, nav.tabs, footer, .hint, .filters, #btn-copy-csv, #btn-cetak, #btn-cetak-guru, .copy-note{display:none !important;}
     main{margin:0; max-width:100%; padding:0;}
@@ -263,6 +274,8 @@
   <nav class="tabs">
     <button class="active" data-tab="input">✏️ Input Siswa</button>
     <button data-tab="input-guru">👩‍🏫 Input Guru</button>
+    <button data-tab="kebaikan">🌟 Catatan Kebaikan</button>
+    <button data-tab="keburukan">⚠️ Catatan Keburukan</button>
     <button data-tab="rekap">💬 Form WhatsApp</button>
     <button data-tab="guru-rekap">🗂️ Log Checklist Guru</button>
     <button data-tab="riwayat">📚 Log Riwayat Siswa</button>
@@ -332,6 +345,10 @@
       <div class="student-checklist" id="guru-checklist"></div>
     </div>
   </section>
+
+  <!-- CATATAN KEBAIKAN & KEBURUKAN (diisi lewat JavaScript) -->
+  <section id="tab-kebaikan" style="display:none;"></section>
+  <section id="tab-keburukan" style="display:none;"></section>
 
   <!-- RIWAYAT TAB (SISWA) -->
   <section id="tab-riwayat" style="display:none;">
@@ -426,7 +443,6 @@
     {id:'lunchbox', label:'Tidak Membawa Lunchbox', emoji:'🍱', positiveMsg:'Alhamdulillah, semua siswa membawa lunchbox hari ini.'},
     {id:'infaq', label:"Tidak Membawa Infaq Jum'at", emoji:'💰', positiveMsg:"Alhamdulillah, semua siswa membawa infaq Jum'at hari ini."},
     {id:'kuku', label:'Belum Potong Kuku', emoji:'💅', positiveMsg:'Alhamdulillah, kuku seluruh siswa sudah rapi hari ini.'},
-    {id:'catering', label:'Tidak Membawa Uang Catering', emoji:'💵', positiveMsg:'Alhamdulillah, semua siswa membawa uang catering hari ini.'},
     {id:'sholat', label:'Tidak Sholat', emoji:'🕌', optional:true},
     {id:'kasur', label:'Tidak Membereskan Tempat Tidur', emoji:'🛏️', optional:true},
     {id:'tidakmasuk', label:'Tidak Masuk', emoji:'🚫', optional:true},
@@ -567,7 +583,7 @@
 
   // ---------- TABS ----------
   const tabs = document.querySelectorAll('nav.tabs button');
-  const sections = {input: 'tab-input', 'input-guru':'tab-input-guru', riwayat:'tab-riwayat', rekap:'tab-rekap', 'guru-rekap':'tab-guru-rekap', siswa:'tab-siswa'};
+  const sections = {kebaikan:'tab-kebaikan', keburukan:'tab-keburukan', input: 'tab-input', 'input-guru':'tab-input-guru', riwayat:'tab-riwayat', rekap:'tab-rekap', 'guru-rekap':'tab-guru-rekap', siswa:'tab-siswa'};
   tabs.forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       tabs.forEach(b=>b.classList.remove('active'));
@@ -581,6 +597,7 @@
       if(btn.dataset.tab==='rekap'){ records = await safeFetchForDisplay(fetchRecords, records, 'catatan pelanggaran'); renderRekap(); }
       if(btn.dataset.tab==='guru-rekap'){ guruLog = await safeFetchForDisplay(fetchGuruLog, guruLog, 'log guru'); renderGuruRekap(); }
       if(btn.dataset.tab==='siswa') renderStudentList();
+      if(logModules[btn.dataset.tab]) logModules[btn.dataset.tab].show();
     });
   });
 
@@ -1010,7 +1027,7 @@
   });
 
   // ---------- REKAP WA ----------
-  const WA_ONLY_ON_DAY = { infaq: 5, kuku: 5, catering: 6 };
+  const WA_ONLY_ON_DAY = { infaq: 5, kuku: 5 };
   function categoriesForWaDay(tanggal){
     const dow = new Date(tanggal+'T00:00:00').getDay();
     return CATEGORIES.filter(c => !(c.id in WA_ONLY_ON_DAY) || WA_ONLY_ON_DAY[c.id] === dow);
@@ -1262,6 +1279,229 @@
     document.getElementById('s-bulk').value='';
     renderStudentList();
   });
+
+  // ---------- CATATAN KEBAIKAN / KEBURUKAN ----------
+  // Anti-tumpang-tindih: tiap catatan disimpan sebagai ENTRI SENDIRI (POST = kunci unik otomatis dari Firebase),
+  // dan hapus memakai DELETE pada satu entri saja. Tidak ada baca-lalu-timpa seluruh data.
+  const logModules = {};
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  async function fbList(path){
+    const res = await fetch(FIREBASE_URL+path+'.json?t='+Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('Server merespon status '+res.status);
+    const data = await res.json();
+    if(!data) return [];
+    return Object.entries(data).map(([k,v])=>Object.assign({}, v, {_key:k}));
+  }
+  async function fbPush(path, value){
+    const res = await fetch(FIREBASE_URL+path+'.json', {method:'POST', body:JSON.stringify(value)});
+    if(!res.ok) throw new Error('Server merespon status '+res.status);
+  }
+  async function fbRemove(path){
+    const res = await fetch(FIREBASE_URL+path+'.json', {method:'DELETE'});
+    if(!res.ok) throw new Error('Server merespon status '+res.status);
+  }
+
+  function buildWaGood(items, tanggal, kelas, withAkt){
+    const list = items.filter(r=>r.tanggal===tanggal && (!kelas || r.kelas===kelas))
+      .sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));
+    const seen = new Map();
+    list.forEach(r=>{
+      const key = r.studentId || (r.name+'|'+r.kelas);
+      const akt = String(r.aktivitas||'').replace(/\s+/g,' ').trim();
+      if(!seen.has(key)) seen.set(key, {name:r.name, kelas:r.kelas, akt: akt?[akt]:[]});
+      else if(akt && !seen.get(key).akt.includes(akt)) seen.get(key).akt.push(akt);
+    });
+    const arr = Array.from(seen.values()).sort((a,b)=>a.name.localeCompare(b.name));
+    if(arr.length===0) return 'Belum ada catatan kebaikan untuk tanggal ini' + (kelas?' di '+kelas:'') + '.';
+    const bar = '━━━━━━━━━━━━━━━━━━';
+    let t = `*🌟 TODAY'S GOOD ATTITUDE 🌟*\n${bar}\n✨ Appreciating Good Character, Building Great Habits ✨\n\n📅 ${fmtTanggalPanjang(tanggal)}` + (kelas?`\n🏫 ${kelas}`:'') + `\n${bar}\n\n`;
+    t += `Thank you for showing good character today!\nBerikut adalah siswa-siswi yang hari ini menunjukkan perilaku dan akhlak terpuji:\n\n`;
+    t += arr.map((a,i)=> `${i+1}. 🌟 ${a.name}` + (kelas?'':` (${a.kelas})`) + (withAkt && a.akt.length ? ` — ${a.akt.join('; ')}` : '')).join('\n');
+    t += `\n\n👏 Total: ${arr.length} siswa teladan hari ini\n${bar}\n\n`;
+    t += `Teruslah menebarkan kebaikan. Semoga menjadi kebiasaan baik yang tumbuh dalam kehidupan sehari-hari. 🌿\n\n`;
+    t += `*_Untuk anak-anak yang hari ini telah melakukan kebaikan, tetapi belum tercatat atau belum sempat teramati oleh Bapak/Ibu Guru, tetaplah semangat! Jangan pernah berhenti berbuat baik hanya karena namamu belum disebutkan. Ingat, Allah Maha Mengetahui setiap kebaikan, dan tidak ada satu pun amal baik yang luput dari catatan-Nya. 🤍_*\n\n`;
+    t += `Keep hamasah! Keep being kind and inspiring! 🌱`;
+    return t;
+  }
+
+  function setupLog(cfg){
+    const sec = document.getElementById('tab-'+cfg.id);
+    sec.innerHTML = `
+      <div class="card">
+        <h2>Catatan ${cfg.title} Siswa</h2>
+        <p class="hint">Ketik beberapa huruf nama siswa, pilih dari saran. Boleh lebih dari satu siswa.</p>
+        <label>Tanggal</label>
+        <input type="date" class="lg-tgl">
+        <label>Nama Siswa</label>
+        <div class="sugwrap">
+          <div class="chipbox"><span class="lg-chips"></span><input type="text" class="lg-cari" placeholder="Ketik nama siswa..." autocomplete="off"></div>
+          <div class="suggest lg-sug" style="display:none;"></div>
+        </div>
+        <label>${cfg.actLabel}</label>
+        <textarea class="lg-akt" rows="3" placeholder="${cfg.actPh}"></textarea>
+        <label>Guru Pelapor</label>
+        <input type="text" class="lg-pel" placeholder="Nama guru penulis laporan">
+        <button class="btn lg-submit">💾 Submit</button>
+        <div class="stamp lg-stamp"></div>
+      </div>
+      ${cfg.wa ? `<div class="card">
+        <h2>Pesan WhatsApp Kebaikan</h2>
+        <p class="hint">Pilih tanggal (dan kelas), lalu salin pesannya ke grup WA.</p>
+        <div class="row2">
+          <div><label>Tanggal</label><input type="date" class="wa-tgl"></div>
+          <div><label>Kelas</label><select class="wa-kls"><option value="">Semua Kelas</option>${KELAS_LIST.map(k=>`<option>${k}</option>`).join('')}</select></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:600;margin-top:12px;"><input type="checkbox" class="wa-akt" style="width:auto;"> Sertakan aktivitas kebaikan di samping nama</label>
+        <div class="wa-output lg-wa-out" style="margin-top:12px;"></div>
+        <button class="btn marigold lg-wa-copy">📋 Salin Pesan WhatsApp</button>
+        <div class="copy-note lg-wa-note">Tersalin! Tinggal tempel di WhatsApp.</div>
+      </div>` : ''}
+      <div class="card">
+        <h2>Riwayat ${cfg.title}</h2>
+        <div class="filters"><select class="lg-fk"><option value="">Semua Kelas</option>${KELAS_LIST.map(k=>`<option>${k}</option>`).join('')}</select></div>
+        <div class="row2">
+          <div><label>Dari Tanggal</label><input type="date" class="lg-dari"></div>
+          <div><label>Sampai Tanggal</label><input type="date" class="lg-sampai"></div>
+        </div>
+        <div class="lg-list" style="margin-top:12px;"></div>
+        <button class="btn secondary lg-copy">📄 Salin sebagai baris Spreadsheet (Nama, Kelas, Tanggal, ${cfg.title}, Pelapor)</button>
+        <div class="copy-note lg-note">Tersalin! Tempel langsung ke Google Sheets / Excel.</div>
+      </div>`;
+    const $ = s => sec.querySelector(s);
+    const tgl=$('.lg-tgl'), cari=$('.lg-cari'), sug=$('.lg-sug'), chips=$('.lg-chips'),
+          akt=$('.lg-akt'), pel=$('.lg-pel'), btn=$('.lg-submit'), stamp=$('.lg-stamp'),
+          fk=$('.lg-fk'), dari=$('.lg-dari'), sampai=$('.lg-sampai'), listEl=$('.lg-list');
+    tgl.value = todayStr();
+    let selected = [];
+    let items = [];
+    let renderWa = ()=>{};
+
+    function renderChips(){
+      chips.innerHTML = selected.map(s=>`<span class="chip">${esc(s.name)} (${esc(s.kelas)}) <b data-id="${esc(s.id)}">&times;</b></span>`).join('');
+      chips.querySelectorAll('b').forEach(b=>b.addEventListener('click', ()=>{
+        selected = selected.filter(s=>s.id!==b.dataset.id); renderChips();
+      }));
+    }
+    function addStudent(id){
+      const st = students.find(s=>s.id===id);
+      if(st && !selected.some(s=>s.id===id)) selected.push({id:st.id, name:st.name, kelas:st.kelas});
+      cari.value=''; sug.style.display='none'; renderChips(); cari.focus();
+    }
+    function suggestions(){
+      const q = cari.value.trim().toLowerCase();
+      if(!q) return [];
+      const chosen = new Set(selected.map(s=>s.id));
+      return students.filter(s=>!chosen.has(s.id) && s.name.toLowerCase().includes(q))
+        .sort((a,b)=>{
+          const as=a.name.toLowerCase().startsWith(q)?0:1, bs=b.name.toLowerCase().startsWith(q)?0:1;
+          return as-bs || a.name.localeCompare(b.name);
+        }).slice(0,8);
+    }
+    function renderSug(){
+      if(!cari.value.trim()){ sug.style.display='none'; return; }
+      const list = suggestions();
+      sug.innerHTML = list.length
+        ? list.map(s=>`<div class="sug-item" data-id="${esc(s.id)}"><span>${esc(s.name)}</span><span class="kelas-tag">${esc(s.kelas)}</span></div>`).join('')
+        : '<div class="sug-empty">Tidak ada nama yang cocok. Tambahkan dulu di Kelola Siswa.</div>';
+      sug.style.display='block';
+      sug.querySelectorAll('.sug-item').forEach(el=>el.addEventListener('mousedown', e=>{ e.preventDefault(); addStudent(el.dataset.id); }));
+    }
+    cari.addEventListener('input', renderSug);
+    cari.addEventListener('focus', renderSug);
+    cari.addEventListener('blur', ()=>setTimeout(()=>{ sug.style.display='none'; }, 150));
+    cari.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){ e.preventDefault(); const l=suggestions(); if(l.length) addStudent(l[0].id); }
+      if(e.key==='Backspace' && !cari.value && selected.length){ selected.pop(); renderChips(); }
+    });
+
+    function filtered(){
+      let l = items.slice();
+      if(fk.value) l = l.filter(r=>r.kelas===fk.value);
+      if(dari.value) l = l.filter(r=>r.tanggal>=dari.value);
+      if(sampai.value) l = l.filter(r=>r.tanggal<=sampai.value);
+      return l;
+    }
+    function renderList(){
+      const l = filtered().sort((a,b)=> b.tanggal.localeCompare(a.tanggal) || (b.timestamp||0)-(a.timestamp||0));
+      if(!l.length){ listEl.innerHTML='<div class="empty">Belum ada catatan yang cocok.</div>'; return; }
+      listEl.innerHTML = '<table><thead><tr><th>Nama</th><th>Kelas</th><th>Tanggal</th><th>'+cfg.title+'</th><th></th></tr></thead><tbody>'
+        + l.map(r=>`<tr><td>${esc(r.name)}</td><td><span class="kelas-tag">${esc(r.kelas)}</span></td><td>${esc(r.tanggal)}</td>
+          <td>${esc(r.aktivitas)}<br><span style="color:#9A9382;font-size:12px;">Pelapor: ${esc(r.pelapor)}</span></td>
+          <td class="del" data-key="${esc(r._key)}">&times;</td></tr>`).join('') + '</tbody></table>';
+      listEl.querySelectorAll('.del').forEach(td=>td.addEventListener('click', async ()=>{
+        if(!confirm('Hapus catatan ini?')) return;
+        try{ await fbRemove(cfg.path+'/'+td.dataset.key); }
+        catch(e){ alert('Gagal menghapus. Periksa koneksi internet lalu coba lagi.'); return; }
+        await refresh();
+      }));
+    }
+    async function refresh(){
+      try{ items = await fbList(cfg.path); }
+      catch(e){ alert('Gagal memuat catatan '+cfg.title.toLowerCase()+'. Periksa koneksi internet lalu buka ulang tab ini.'); return; }
+      renderList(); renderWa();
+    }
+    [fk,dari,sampai].forEach(el=>el.addEventListener('change', renderList));
+    if(cfg.wa){
+      const waTgl=$('.wa-tgl'), waKls=$('.wa-kls'), waAkt=$('.wa-akt'), waOut=$('.lg-wa-out');
+      waTgl.value = todayStr();
+      renderWa = ()=>{ waOut.textContent = buildWaGood(items, waTgl.value || todayStr(), waKls.value, waAkt.checked); };
+      [waTgl,waKls,waAkt].forEach(el=>el.addEventListener('change', renderWa));
+      $('.lg-wa-copy').addEventListener('click', async ()=>{
+        try{
+          await navigator.clipboard.writeText(waOut.textContent);
+          const n = $('.lg-wa-note'); n.classList.add('show'); setTimeout(()=>n.classList.remove('show'), 2500);
+        }catch(e){ alert('Gagal menyalin. Coba salin manual.'); }
+      });
+      renderWa();
+    }
+
+    btn.addEventListener('click', async ()=>{
+      if(btn.disabled) return;
+      const tanggal = tgl.value || todayStr();
+      const aktivitas = akt.value.trim(), pelapor = pel.value.trim();
+      if(!selected.length){ alert('Pilih minimal satu siswa.'); return; }
+      if(!aktivitas){ alert('Isi aktivitas terlebih dahulu.'); return; }
+      if(!pelapor){ alert('Isi nama guru pelapor.'); return; }
+      btn.disabled = true;
+      const label = btn.textContent; btn.textContent = '⏳ Menyimpan...';
+      try{
+        const now = Date.now();
+        const results = await Promise.allSettled(selected.map((s,i)=>
+          fbPush(cfg.path, {studentId:s.id, name:s.name, kelas:s.kelas, tanggal, aktivitas, pelapor, timestamp: now+i})));
+        const failed = selected.filter((s,i)=>results[i].status==='rejected');
+        const okCount = selected.length - failed.length;
+        if(failed.length){
+          alert('Sebagian gagal tersimpan ('+failed.length+' siswa). Yang gagal tetap dipilih, silakan tekan Submit lagi.');
+          selected = failed;
+        }else{
+          selected = []; akt.value='';
+        }
+        renderChips();
+        if(okCount){
+          stamp.textContent = '✅ Tersimpan — '+okCount+' siswa dicatat';
+          stamp.classList.add('show'); setTimeout(()=>stamp.classList.remove('show'), 2600);
+        }
+        await refresh();
+      }finally{
+        btn.disabled = false; btn.textContent = label;
+      }
+    });
+
+    $('.lg-copy').addEventListener('click', async ()=>{
+      const clean = v => String(v==null?'':v).replace(/[\t\r\n]+/g,' ');
+      const rows = filtered().sort((a,b)=>a.tanggal.localeCompare(b.tanggal) || (a.timestamp||0)-(b.timestamp||0))
+        .map(r=>[r.name, r.kelas, r.tanggal, r.aktivitas, r.pelapor].map(clean).join('\t'));
+      const text = 'Nama\tKelas\tTanggal\t'+cfg.title+'\tPelapor\n' + rows.join('\n');
+      try{
+        await navigator.clipboard.writeText(text);
+        const n = $('.lg-note'); n.classList.add('show'); setTimeout(()=>n.classList.remove('show'), 2500);
+      }catch(e){ alert('Gagal menyalin. Coba salin manual.'); }
+    });
+
+    logModules[cfg.id] = { show: ()=>{ renderChips(); refresh(); } };
+  }
+  setupLog({id:'kebaikan', wa:true, title:'Kebaikan', path:'kebaikan', actLabel:'Aktivitas Kebaikan', actPh:'Contoh: membantu temannya membawa buku ke perpustakaan'});
+  setupLog({id:'keburukan', title:'Keburukan', path:'keburukan', actLabel:'Aktivitas Keburukan', actPh:'Contoh: berkata kasar kepada teman saat istirahat'});
 
   // ---------- INIT ----------
   async function init(){
